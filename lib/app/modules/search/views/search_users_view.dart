@@ -3,9 +3,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:look4me/app/core/constants/app_colors.dart';
 import 'package:look4me/app/core/themes/text_styles.dart';
+import 'package:look4me/app/modules/explore/widgets/user_card.dart';
+import 'package:look4me/app/modules/search/controllers/search_controller.dart';
 import 'package:look4me/app/shared/components/custom_text_field.dart';
+import 'package:look4me/app/shared/components/empty_state.dart';
+import 'package:look4me/app/shared/components/loading_widget.dart';
 
-class SearchUsersView extends GetView<SearchController> {
+class SearchUsersView extends GetView<SearchL4MController> {
   const SearchUsersView({Key? key}) : super(key: key);
 
   @override
@@ -43,7 +47,9 @@ class SearchUsersView extends GetView<SearchController> {
             width: 40.w,
             height: 40.h,
             decoration: BoxDecoration(
-              gradient: AppColors.secondaryGradient,
+              gradient: LinearGradient(
+                colors: [AppColors.secondary, AppColors.accent],
+              ),
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Icon(
@@ -116,6 +122,8 @@ class SearchUsersView extends GetView<SearchController> {
           return UserCard(
             user: user,
             onTap: () => controller.viewUserProfile(user.id),
+            showFollowButton: true,
+            onFollowToggle: () => controller.toggleFollowUser(user.id),
           );
         },
       );
@@ -125,11 +133,7 @@ class SearchUsersView extends GetView<SearchController> {
   Widget _buildRecentSearches() {
     return Obx(() {
       if (controller.recentSearches.isEmpty) {
-        return EmptyState(
-          icon: Icons.search_outlined,
-          title: 'Comece a buscar',
-          subtitle: 'Digite o nome de uma usuária para encontrar pessoas incríveis na comunidade Look4Me',
-        );
+        return _buildEmptyRecentSearches();
       }
 
       return Column(
@@ -169,10 +173,67 @@ class SearchUsersView extends GetView<SearchController> {
                   onTap: () => controller.viewUserProfile(user.id),
                   showRemoveButton: true,
                   onRemove: () => controller.removeFromRecentSearches(user.id),
+                  showFollowButton: true,
+                  onFollowToggle: () => controller.toggleFollowUser(user.id),
                 );
               },
             ),
           ),
+        ],
+      );
+    });
+  }
+
+  Widget _buildEmptyRecentSearches() {
+    return Column(
+      children: [
+        SizedBox(height: 40.h),
+        EmptyState(
+          icon: Icons.search_outlined,
+          title: 'Comece a buscar',
+          subtitle: 'Digite o nome de uma usuária para encontrar pessoas incríveis na comunidade Look4Me',
+        ),
+        SizedBox(height: 40.h),
+        _buildSuggestedUsers(),
+      ],
+    );
+  }
+
+  Widget _buildSuggestedUsers() {
+    return Obx(() {
+      if (controller.isLoadingPopular.value) {
+        return Container(
+          height: 200.h,
+          child: const LoadingWidget(showShimmer: false),
+        );
+      }
+
+      if (controller.popularUsers.isEmpty) {
+        return const SizedBox.shrink();
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: Text(
+              'Usuárias Sugeridas',
+              style: TextStyles.titleMedium.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          SizedBox(height: 16.h),
+          ...controller.popularUsers.take(5).map((user) => Container(
+            margin: EdgeInsets.symmetric(horizontal: 16.w),
+            child: UserCard(
+              user: user,
+              onTap: () => controller.viewUserProfile(user.id),
+              showFollowButton: true,
+              onFollowToggle: () => controller.toggleFollowUser(user.id),
+            ),
+          )).toList(),
         ],
       );
     });

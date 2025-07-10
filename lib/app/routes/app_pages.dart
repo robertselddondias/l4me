@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:look4me/app/modules/search/controllers/search_controller.dart';
 import '../modules/auth/controllers/auth_controller.dart';
 import '../modules/auth/views/login_view.dart';
 import '../modules/auth/views/register_view.dart';
@@ -13,6 +14,9 @@ import '../modules/create_post/views/create_post_view.dart';
 import '../modules/stories/controllers/stories_controller.dart';
 import '../modules/stories/views/stories_view.dart';
 import '../modules/stories/views/create_story_view.dart';
+import '../modules/search/views/search_users_view.dart';
+import '../modules/explore/controllers/explore_controller.dart';
+import '../modules/explore/views/explore_view.dart';
 import '../modules/navigation/controllers/navigation_controller.dart';
 import '../modules/navigation/views/main_navigation.dart';
 import '../shared/views/splash_view.dart';
@@ -57,6 +61,8 @@ class AppPages {
         Get.lazyPut<HomeController>(() => HomeController());
         Get.lazyPut<ProfileController>(() => ProfileController());
         Get.lazyPut<StoriesController>(() => StoriesController());
+        Get.lazyPut<SearchL4MController>(() => SearchL4MController());
+        Get.lazyPut<ExploreController>(() => ExploreController());
       }),
     ),
     GetPage(
@@ -99,6 +105,21 @@ class AppPages {
       page: () => CreateStoryView(),
       binding: BindingsBuilder(() {
         Get.lazyPut<StoriesController>(() => StoriesController());
+      }),
+    ),
+    // Rotas adicionais para busca e exploração
+    GetPage(
+      name: '/search',
+      page: () => SearchUsersView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<SearchL4MController>(() => SearchL4MController());
+      }),
+    ),
+    GetPage(
+      name: '/explore',
+      page: () => ExploreView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<ExploreController>(() => ExploreController());
       }),
     ),
   ];

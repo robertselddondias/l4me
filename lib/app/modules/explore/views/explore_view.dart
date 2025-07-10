@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:look4me/app/core/constants/app_colors.dart';
+import 'package:look4me/app/core/themes/text_styles.dart';
+import 'package:look4me/app/modules/explore/controllers/explore_controller.dart';
+import 'package:look4me/app/modules/explore/widgets/categories_section.dart';
+import 'package:look4me/app/modules/explore/widgets/trending_looks_section.dart';
+import 'package:look4me/app/modules/explore/widgets/popular_users_section.dart';
+import 'package:look4me/app/modules/stories/widgets/story_card.dart';
+import 'package:look4me/app/shared/components/loading_widget.dart';
 
 class ExploreView extends GetView<ExploreController> {
   const ExploreView({Key? key}) : super(key: key);
@@ -23,11 +30,11 @@ class ExploreView extends GetView<ExploreController> {
                   children: [
                     _buildStoriesSection(),
                     SizedBox(height: 24.h),
-                    CategoriesSection(),
+                    const CategoriesSection(),
                     SizedBox(height: 24.h),
-                    TrendingLooksSection(),
+                    const TrendingLooksSection(),
                     SizedBox(height: 24.h),
-                    PopularUsersSection(),
+                    const PopularUsersSection(),
                     SizedBox(height: 20.h),
                   ],
                 ),
@@ -51,7 +58,9 @@ class ExploreView extends GetView<ExploreController> {
             width: 40.w,
             height: 40.h,
             decoration: BoxDecoration(
-              gradient: AppColors.accentGradient,
+              gradient: LinearGradient(
+                colors: [AppColors.accent, AppColors.primary],
+              ),
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Icon(
