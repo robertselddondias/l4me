@@ -83,16 +83,16 @@ class CategoriesSection extends GetView<ExploreController> {
       },
     ];
 
-    return Container(
-      height: 160.h,
+    return SizedBox(
+      height: 140.h, // Altura fixa menor
       child: GridView.builder(
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.symmetric(horizontal: 16.w),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          childAspectRatio: 0.8,
+          childAspectRatio: 0.9, // Ajustado para caber melhor
           mainAxisSpacing: 12.w,
-          crossAxisSpacing: 12.h,
+          crossAxisSpacing: 8.h, // Reduzido
         ),
         itemCount: categories.length,
         itemBuilder: (context, index) {
@@ -113,7 +113,7 @@ class CategoriesSection extends GetView<ExploreController> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(20.r),
+          borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
               color: category['color'].withOpacity(0.3),
@@ -125,26 +125,32 @@ class CategoriesSection extends GetView<ExploreController> {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(20.r),
+            borderRadius: BorderRadius.circular(16.r),
             onTap: () => controller.searchByCategory(category['name']),
-            child: Padding(
-              padding: EdgeInsets.all(16.w),
+            child: Container(
+              padding: EdgeInsets.all(12.w), // Padding reduzido
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min, // Importante para evitar overflow
                 children: [
                   Icon(
                     category['icon'],
                     color: Colors.white,
-                    size: 32.sp,
+                    size: 24.sp, // Ícone menor
                   ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    category['name'],
-                    style: TextStyles.labelMedium.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
+                  SizedBox(height: 6.h), // Espaçamento reduzido
+                  Flexible( // Usar Flexible em vez de Text direto
+                    child: Text(
+                      category['name'],
+                      style: TextStyles.labelMedium.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11.sp, // Fonte menor
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    textAlign: TextAlign.center,
                   ),
                 ],
               ),

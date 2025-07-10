@@ -8,7 +8,12 @@ import 'package:look4me/app/modules/search/controllers/search_controller.dart';
 import 'package:look4me/app/modules/stories/controllers/stories_controller.dart';
 
 class NavigationController extends GetxController {
-  final RxInt currentIndex = 0.obs;
+  // Variável observável para o índice atual
+  final RxInt _currentIndex = 0.obs;
+
+  // Getter público para acessar o índice atual
+  int get currentIndex => _currentIndex.value;
+  RxInt get currentIndexRx => _currentIndex;
 
   @override
   void onInit() {
@@ -39,10 +44,10 @@ class NavigationController extends GetxController {
   }
 
   void changePage(int index) {
-    if (index != currentIndex.value) {
+    if (index != _currentIndex.value && index >= 0 && index <= 4) {
       // Garantir que o controller da página está registrado antes de navegar
       _ensureControllerForPage(index);
-      currentIndex.value = index;
+      _currentIndex.value = index;
     }
   }
 
@@ -76,6 +81,7 @@ class NavigationController extends GetxController {
     }
   }
 
+  // Métodos de navegação rápida
   void goToHome() {
     changePage(0);
   }
@@ -96,40 +102,56 @@ class NavigationController extends GetxController {
     changePage(4);
   }
 
-  // Métodos de conveniência para navegação rápida
+  // Métodos com ações adicionais
   void goToHomeAndRefresh() {
     changePage(0);
-    if (Get.isRegistered<HomeController>()) {
-      Get.find<HomeController>().refreshPosts();
+    try {
+      if (Get.isRegistered<HomeController>()) {
+        Get.find<HomeController>().refreshPosts();
+      }
+    } catch (e) {
+      print('Erro ao atualizar Home: $e');
     }
   }
 
   void goToSearchWithQuery(String query) {
     changePage(1);
-    if (Get.isRegistered<SearchL4MController>()) {
-      final searchController = Get.find<SearchL4MController>();
-      searchController.searchController.text = query;
-      searchController.searchUsers(query);
+    try {
+      if (Get.isRegistered<SearchL4MController>()) {
+        final searchController = Get.find<SearchL4MController>();
+        searchController.searchController.text = query;
+        searchController.searchUsers(query);
+      }
+    } catch (e) {
+      print('Erro ao buscar: $e');
     }
   }
 
   void goToExploreAndRefresh() {
     changePage(3);
-    if (Get.isRegistered<ExploreController>()) {
-      Get.find<ExploreController>().refreshExploreContent();
+    try {
+      if (Get.isRegistered<ExploreController>()) {
+        Get.find<ExploreController>().refreshExploreContent();
+      }
+    } catch (e) {
+      print('Erro ao atualizar Explore: $e');
     }
   }
 
   void goToProfileAndRefresh() {
     changePage(4);
-    if (Get.isRegistered<ProfileController>()) {
-      Get.find<ProfileController>().refreshProfile();
+    try {
+      if (Get.isRegistered<ProfileController>()) {
+        Get.find<ProfileController>().refreshProfile();
+      }
+    } catch (e) {
+      print('Erro ao atualizar Profile: $e');
     }
   }
 
-  // Método para obter o título da página atual
+  // Métodos utilitários
   String getCurrentPageTitle() {
-    switch (currentIndex.value) {
+    switch (_currentIndex.value) {
       case 0:
         return 'Início';
       case 1:
@@ -145,14 +167,12 @@ class NavigationController extends GetxController {
     }
   }
 
-  // Método para verificar se uma página específica está ativa
   bool isPageActive(int index) {
-    return currentIndex.value == index;
+    return _currentIndex.value == index;
   }
 
-  // Método para obter o ícone da página atual
   IconData getCurrentPageIcon() {
-    switch (currentIndex.value) {
+    switch (_currentIndex.value) {
       case 0:
         return Icons.home_rounded;
       case 1:
@@ -166,5 +186,10 @@ class NavigationController extends GetxController {
       default:
         return Icons.home_rounded;
     }
+  }
+
+  @override
+  void onClose() {
+    super.onClose();
   }
 }

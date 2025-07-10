@@ -29,13 +29,13 @@ class ExploreView extends GetView<ExploreController> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildStoriesSection(),
-                    SizedBox(height: 24.h),
+                    SizedBox(height: 20.h), // Espaçamento reduzido
                     const CategoriesSection(),
-                    SizedBox(height: 24.h),
+                    SizedBox(height: 20.h), // Espaçamento reduzido
                     const TrendingLooksSection(),
-                    SizedBox(height: 24.h),
+                    SizedBox(height: 20.h), // Espaçamento reduzido
                     const PopularUsersSection(),
-                    SizedBox(height: 20.h),
+                    SizedBox(height: 20.h), // Espaçamento final
                   ],
                 ),
               ),
@@ -52,44 +52,50 @@ class ExploreView extends GetView<ExploreController> {
       backgroundColor: AppColors.surface,
       floating: true,
       snap: true,
-      title: Row(
-        children: [
-          Container(
-            width: 40.w,
-            height: 40.h,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColors.accent, AppColors.primary],
+      expandedHeight: 80.h, // Altura reduzida
+      flexibleSpace: FlexibleSpaceBar(
+        title: Row(
+          children: [
+            Container(
+              width: 36.w, // Tamanho reduzido
+              height: 36.h,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.accent, AppColors.primary],
+                ),
+                borderRadius: BorderRadius.circular(10.r),
               ),
-              borderRadius: BorderRadius.circular(12.r),
+              child: Icon(
+                Icons.explore_rounded,
+                color: AppColors.onPrimary,
+                size: 18.sp, // Ícone menor
+              ),
             ),
-            child: Icon(
-              Icons.explore_rounded,
-              color: AppColors.onPrimary,
-              size: 20.sp,
-            ),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Explorar',
-                  style: TextStyles.titleLarge.copyWith(
-                    fontWeight: FontWeight.w700,
+            SizedBox(width: 10.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Explorar',
+                    style: TextStyles.titleMedium.copyWith( // Título menor
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                Text(
-                  'Descubra novos looks',
-                  style: TextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
+                  Text(
+                    'Descubra novos looks',
+                    style: TextStyles.bodySmall.copyWith(
+                      color: AppColors.textSecondary,
+                      fontSize: 10.sp, // Fonte menor
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+        titlePadding: EdgeInsets.only(left: 20.w, bottom: 16.h),
       ),
       actions: [
         IconButton(
@@ -97,7 +103,7 @@ class ExploreView extends GetView<ExploreController> {
           icon: Icon(
             Icons.refresh_rounded,
             color: AppColors.primary,
-            size: 24.sp,
+            size: 20.sp, // Ícone menor
           ),
         ),
       ],
@@ -108,7 +114,7 @@ class ExploreView extends GetView<ExploreController> {
     return Obx(() {
       if (controller.isLoadingStories.value) {
         return Container(
-          height: 120.h,
+          height: 100.h, // Altura reduzida
           padding: EdgeInsets.symmetric(horizontal: 16.w),
           child: const LoadingWidget(showShimmer: false),
         );
@@ -145,9 +151,9 @@ class ExploreView extends GetView<ExploreController> {
               ],
             ),
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: 8.h), // Espaçamento reduzido
           SizedBox(
-            height: 200.h,
+            height: 180.h, // Altura reduzida
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -155,7 +161,7 @@ class ExploreView extends GetView<ExploreController> {
               itemBuilder: (context, index) {
                 final story = controller.trendingStories[index];
                 return Container(
-                  width: 280.w,
+                  width: 250.w, // Largura reduzida
                   margin: EdgeInsets.only(right: 12.w),
                   child: StoryCard(
                     story: story,
