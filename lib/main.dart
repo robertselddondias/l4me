@@ -60,4 +60,11 @@ class Look4MeApp extends StatelessWidget {
       },
     );
   }
+
+  void _closeKeyboard(BuildContext context) {
+    FocusScopeNode currentFocus = FocusScope.of(context);
+    if (!currentFocus.hasPrimaryFocus && currentFocus.focusedChild != null) {
+      currentFocus.unfocus();
+    }
+  }
 }

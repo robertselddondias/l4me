@@ -69,35 +69,49 @@ class ImagePickerWidget extends StatelessWidget {
           ),
         ),
         SizedBox(height: 16.h),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              label,
-              style: TextStyles.titleSmall.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            if (isRequired) ...[
-              SizedBox(width: 4.w),
-              Text(
-                '*',
-                style: TextStyles.titleSmall.copyWith(
-                  color: AppColors.error,
-                  fontWeight: FontWeight.w600,
+        // CORREÇÃO: Envolver o Text(label) em Expanded para evitar overflow
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w), // Adicione um padding para evitar texto muito próximo das bordas
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Expanded( // Permite que a label ocupe o espaço restante
+                child: Text(
+                  label,
+                  style: TextStyles.titleSmall.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center, // Centraliza o texto expandido
+                  overflow: TextOverflow.ellipsis, // Adiciona reticências se o texto for muito longo
+                  maxLines: 1, // Limita a 1 linha
                 ),
               ),
+              if (isRequired) ...[
+                SizedBox(width: 4.w),
+                Text(
+                  '*',
+                  style: TextStyles.titleSmall.copyWith(
+                    color: AppColors.error,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
         SizedBox(height: 4.h),
-        Text(
-          hint ?? 'Toque para adicionar foto',
-          style: TextStyles.bodySmall.copyWith(
-            color: AppColors.textSecondary,
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w), // Padding para o hint também
+          child: Text(
+            hint ?? 'Toque para adicionar foto',
+            style: TextStyles.bodySmall.copyWith(
+              color: AppColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis, // Garante que o hint não transborde
+            maxLines: 1,
           ),
-          textAlign: TextAlign.center,
         ),
         SizedBox(height: 8.h),
         Container(
@@ -107,7 +121,7 @@ class ImagePickerWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(16.r),
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: MainAxisSize.min, // Mantém a Row compacta
             children: [
               Icon(
                 Icons.camera_alt_outlined,
@@ -115,11 +129,15 @@ class ImagePickerWidget extends StatelessWidget {
                 color: AppColors.primary,
               ),
               SizedBox(width: 4.w),
-              Text(
-                'Câmera',
-                style: TextStyles.labelSmall.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w500,
+              Flexible( // CORREÇÃO: Permite que 'Câmera' encolha se necessário
+                child: Text(
+                  'Câmera',
+                  style: TextStyles.labelSmall.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
               SizedBox(width: 8.w),
@@ -135,11 +153,15 @@ class ImagePickerWidget extends StatelessWidget {
                 color: AppColors.primary,
               ),
               SizedBox(width: 4.w),
-              Text(
-                'Galeria',
-                style: TextStyles.labelSmall.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w500,
+              Flexible( // CORREÇÃO: Permite que 'Galeria' encolha se necessário
+                child: Text(
+                  'Galeria',
+                  style: TextStyles.labelSmall.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
             ],
@@ -201,6 +223,8 @@ class ImagePickerWidget extends StatelessWidget {
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
               ),
+              overflow: TextOverflow.ellipsis, // Garante que a label não transborde
+              maxLines: 1,
             ),
           ),
         ),
@@ -254,6 +278,7 @@ class ImagePickerWidget extends StatelessWidget {
         Positioned(
           bottom: 12.h,
           left: 12.w,
+          right: 12.w, // Adicionei right para garantir que a Row se ajuste
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
             decoration: BoxDecoration(
@@ -261,7 +286,7 @@ class ImagePickerWidget extends StatelessWidget {
               borderRadius: BorderRadius.circular(16.r),
             ),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: MainAxisSize.min, // Mantém a Row compacta
               children: [
                 Icon(
                   Icons.touch_app_outlined,
@@ -269,10 +294,14 @@ class ImagePickerWidget extends StatelessWidget {
                   size: 14.sp,
                 ),
                 SizedBox(width: 4.w),
-                Text(
-                  'Toque para alterar',
-                  style: TextStyles.labelSmall.copyWith(
-                    color: Colors.white,
+                Expanded( // CORREÇÃO: Permite que 'Toque para alterar' encolha
+                  child: Text(
+                    'Toque para alterar',
+                    style: TextStyles.labelSmall.copyWith(
+                      color: Colors.white,
+                    ),
+                    overflow: TextOverflow.ellipsis, // Adiciona reticências se o texto for muito longo
+                    maxLines: 1, // Limita a 1 linha
                   ),
                 ),
               ],
@@ -298,17 +327,29 @@ class ImagePickerWidget extends StatelessWidget {
             size: 32.sp,
           ),
           SizedBox(height: 8.h),
-          Text(
-            'Erro ao carregar imagem',
-            style: TextStyles.bodySmall.copyWith(
-              color: AppColors.error,
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            child: Text(
+              'Erro ao carregar imagem',
+              style: TextStyles.bodySmall.copyWith(
+                color: AppColors.error,
+              ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
             ),
           ),
           SizedBox(height: 4.h),
-          Text(
-            'Toque para tentar novamente',
-            style: TextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            child: Text(
+              'Toque para tentar novamente',
+              style: TextStyles.bodySmall.copyWith(
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
             ),
           ),
         ],

@@ -24,41 +24,76 @@ class PostCard extends StatefulWidget {
 }
 
 class _PostCardState extends State<PostCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _fadeAnimation;
+    with TickerProviderStateMixin {
+  late AnimationController _heartAnimationController;
+  late AnimationController _slideAnimationController;
+  late AnimationController _resultsAnimationController;
+
+  late Animation<double> _heartScaleAnimation;
+  late Animation<double> _slideAnimation;
+  late Animation<double> _resultsSlideAnimation;
+  late Animation<double> _resultsOpacityAnimation;
 
   bool _showResults = false;
+  int? _selectedOption;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
+
+    _heartAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _slideAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+
+    _resultsAnimationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
 
-    _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
+    _heartScaleAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.2,
     ).animate(CurvedAnimation(
-      parent: _animationController,
+      parent: _heartAnimationController,
       curve: Curves.elasticOut,
     ));
 
-    _fadeAnimation = Tween<double>(
+    _slideAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
     ).animate(CurvedAnimation(
-      parent: _animationController,
+      parent: _slideAnimationController,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _resultsSlideAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _resultsAnimationController,
+      curve: const Interval(0.0, 0.6, curve: Curves.easeOutCubic),
+    ));
+
+    _resultsOpacityAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _resultsAnimationController,
       curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
     ));
 
     _showResults = widget.hasUserVoted;
+    _selectedOption = widget.userVote;
 
     if (widget.hasUserVoted) {
-      _animationController.forward();
+      _slideAnimationController.value = 1.0;
+      _resultsAnimationController.value = 1.0;
     }
   }
 
@@ -66,40 +101,58 @@ class _PostCardState extends State<PostCard>
   void didUpdateWidget(PostCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!oldWidget.hasUserVoted && widget.hasUserVoted) {
-      setState(() {
-        _showResults = true;
-      });
-      _animationController.forward();
+      _handleVoteSuccess();
     }
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _heartAnimationController.dispose();
+    _slideAnimationController.dispose();
+    _resultsAnimationController.dispose();
     super.dispose();
   }
 
   void _handleVote(int option) {
+    setState(() {
+      _selectedOption = option;
+      _showResults = true;
+    });
+
+    // Animate heart
+    _heartAnimationController.forward().then((_) {
+      _heartAnimationController.reverse();
+    });
+
+    // Animate slide and results
+    _slideAnimationController.forward();
+
+    Future.delayed(const Duration(milliseconds: 200), () {
+      _resultsAnimationController.forward();
+    });
+
     widget.onVote(option);
+  }
+
+  void _handleVoteSuccess() {
     setState(() {
       _showResults = true;
     });
-    _animationController.forward();
+    _slideAnimationController.forward();
+    _resultsAnimationController.forward();
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      margin: EdgeInsets.only(bottom: 8.h),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(24.r),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadow,
+            color: AppColors.shadow.withOpacity(0.03),
             blurRadius: 20,
-            offset: const Offset(0, 8),
-            spreadRadius: 0,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -108,8 +161,8 @@ class _PostCardState extends State<PostCard>
         children: [
           _buildHeader(),
           if (widget.post.description.isNotEmpty) _buildDescription(),
-          _buildImagesSection(),
-          _buildVotingSection(),
+          _buildMainContent(),
+          _buildEngagementSection(),
           _buildFooter(),
         ],
       ),
@@ -118,107 +171,109 @@ class _PostCardState extends State<PostCard>
 
   Widget _buildHeader() {
     return Padding(
-      padding: EdgeInsets.all(20.w),
+      padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 12.h),
       child: Row(
         children: [
           Hero(
-            tag: 'avatar_${widget.post.authorId}',
+            tag: 'post_avatar_${widget.post.id}',
             child: Container(
-              width: 48.w,
-              height: 48.h,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.primary.withOpacity(0.2),
-                  width: 2,
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.primary.withOpacity(0.8),
+                    AppColors.secondary.withOpacity(0.8),
+                  ],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: AppColors.primary.withOpacity(0.2),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
+              padding: EdgeInsets.all(2.w),
               child: CircleAvatar(
                 radius: 22.r,
-                backgroundColor: AppColors.primaryLight,
-                backgroundImage: widget.post.authorProfileImage != null
-                    ? CachedNetworkImageProvider(widget.post.authorProfileImage!)
-                    : null,
-                child: widget.post.authorProfileImage == null
-                    ? Icon(
-                  Icons.person_rounded,
-                  color: AppColors.primary,
-                  size: 24.sp,
-                )
-                    : null,
+                backgroundColor: AppColors.surface,
+                child: CircleAvatar(
+                  radius: 20.r,
+                  backgroundColor: AppColors.primaryLight,
+                  backgroundImage: widget.post.authorProfileImage != null
+                      ? CachedNetworkImageProvider(widget.post.authorProfileImage!)
+                      : null,
+                  child: widget.post.authorProfileImage == null
+                      ? Icon(
+                    Icons.person_rounded,
+                    color: AppColors.primary,
+                    size: 20.sp,
+                  )
+                      : null,
+                ),
               ),
             ),
           ),
-          SizedBox(width: 16.w),
+          SizedBox(width: 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  widget.post.authorName,
-                  style: TextStyles.titleMedium.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.text,
-                  ),
-                ),
-                SizedBox(height: 4.h),
                 Row(
                   children: [
-                    Icon(
-                      Icons.access_time_rounded,
-                      size: 14.sp,
-                      color: AppColors.textTertiary,
+                    Text(
+                      widget.post.authorName,
+                      style: TextStyles.titleSmall.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.text,
+                      ),
+                    ),
+                    SizedBox(width: 4.w),
+                    Container(
+                      width: 4.w,
+                      height: 4.h,
+                      decoration: BoxDecoration(
+                        color: AppColors.textTertiary,
+                        shape: BoxShape.circle,
+                      ),
                     ),
                     SizedBox(width: 4.w),
                     Text(
                       _formatTimeAgo(widget.post.createdAt),
                       style: TextStyles.bodySmall.copyWith(
                         color: AppColors.textTertiary,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  _getOccasionColor().withOpacity(0.1),
-                  _getOccasionColor().withOpacity(0.05),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20.r),
-              border: Border.all(
-                color: _getOccasionColor().withOpacity(0.3),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  _getOccasionIcon(),
-                  size: 16.sp,
-                  color: _getOccasionColor(),
-                ),
-                SizedBox(width: 6.w),
-                Text(
-                  widget.post.occasionDisplayName,
-                  style: TextStyles.labelMedium.copyWith(
-                    color: _getOccasionColor(),
-                    fontWeight: FontWeight.w600,
+                SizedBox(height: 2.h),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                  decoration: BoxDecoration(
+                    color: _getOccasionColor().withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Text(
+                    widget.post.occasionDisplayName,
+                    style: TextStyles.labelSmall.copyWith(
+                      color: _getOccasionColor(),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 10.sp,
+                    ),
                   ),
                 ),
               ],
+            ),
+          ),
+          IconButton(
+            onPressed: () {
+              // Menu de opções
+            },
+            icon: Icon(
+              Icons.more_vert_rounded,
+              color: AppColors.textSecondary,
+              size: 20.sp,
             ),
           ),
         ],
@@ -228,205 +283,276 @@ class _PostCardState extends State<PostCard>
 
   Widget _buildDescription() {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w).copyWith(bottom: 16.h),
+      padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
       child: Text(
         widget.post.description,
-        style: TextStyles.bodyLarge.copyWith(
+        style: TextStyles.bodyMedium.copyWith(
           color: AppColors.text,
-          height: 1.5,
+          height: 1.4,
+          fontWeight: FontWeight.w400,
         ),
       ),
+    );
+  }
+
+  Widget _buildMainContent() {
+    return Stack(
+      children: [
+        AspectRatio(
+          aspectRatio: 0.8, // Mais alto que largo, como Instagram
+          child: Container(
+            width: double.infinity,
+            child: _buildImagesSection(),
+          ),
+        ),
+        // Heart animation overlay
+        AnimatedBuilder(
+          animation: _heartAnimationController,
+          builder: (context, child) {
+            if (_heartAnimationController.value == 0) {
+              return const SizedBox.shrink();
+            }
+            return Positioned.fill(
+              child: Center(
+                child: Transform.scale(
+                  scale: _heartScaleAnimation.value,
+                  child: Container(
+                    width: 80.w,
+                    height: 80.h,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.favorite_rounded,
+                      color: Colors.white,
+                      size: 40.sp,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 
   Widget _buildImagesSection() {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildImageOption(1, widget.post.imageOption1),
-          ),
-          SizedBox(width: 16.w),
-          Expanded(
-            child: _buildImageOption(2, widget.post.imageOption2),
-          ),
-        ],
-      ),
+    return Row(
+      children: [
+        Expanded(
+          child: _buildImageOption(1, widget.post.imageOption1),
+        ),
+        Expanded(
+          child: _buildImageOption(2, widget.post.imageOption2),
+        ),
+      ],
     );
   }
 
   Widget _buildImageOption(int option, String imageUrl) {
-    final isSelected = widget.hasUserVoted && widget.userVote == option;
+    final isSelected = _selectedOption == option;
     final percentage = option == 1
         ? widget.post.option1Percentage
         : widget.post.option2Percentage;
+    final votes = option == 1 ? widget.post.option1Votes : widget.post.option2Votes;
 
     return GestureDetector(
       onTap: widget.hasUserVoted ? null : () => _handleVote(option),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        height: 280.h,
+      child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20.r),
           border: Border.all(
             color: isSelected
                 ? AppColors.primary
-                : widget.hasUserVoted
-                ? AppColors.border.withOpacity(0.5)
-                : AppColors.border,
-            width: isSelected ? 3 : 1.5,
+                : AppColors.surface,
+            width: isSelected ? 3 : 0,
           ),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: AppColors.primary.withOpacity(0.2),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ] : null,
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20.r),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Image
-              CachedNetworkImage(
-                imageUrl: imageUrl,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  color: AppColors.surfaceVariant,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircularProgressIndicator(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Image
+            CachedNetworkImage(
+              imageUrl: imageUrl,
+              fit: BoxFit.cover,
+              placeholder: (context, url) => Container(
+                color: AppColors.surfaceVariant,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 24.w,
+                      height: 24.h,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
                         color: AppColors.primary,
-                        strokeWidth: 3,
                       ),
-                      SizedBox(height: 12.h),
-                      Text(
-                        'Carregando...',
-                        style: TextStyles.bodySmall.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: AppColors.surfaceVariant,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.broken_image_outlined,
-                        color: AppColors.textTertiary,
-                        size: 48.sp,
-                      ),
-                      SizedBox(height: 8.h),
-                      Text(
-                        'Erro ao carregar',
-                        style: TextStyles.bodySmall.copyWith(
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Overlay gradiente
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withOpacity(0.1),
-                      Colors.transparent,
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.6),
-                    ],
-                    stops: const [0.0, 0.3, 0.7, 1.0],
-                  ),
-                ),
-              ),
-
-              // Option label
-              Positioned(
-                top: 16.h,
-                left: 16.w,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(16.r),
-                  ),
-                  child: Text(
-                    'Opção $option',
-                    style: TextStyles.labelMedium.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
                     ),
+                    SizedBox(height: 8.h),
+                    Text(
+                      'Carregando...',
+                      style: TextStyles.bodySmall.copyWith(
+                        color: AppColors.textSecondary,
+                        fontSize: 10.sp,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              errorWidget: (context, url, error) => Container(
+                color: AppColors.surfaceVariant,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.image_not_supported_outlined,
+                      color: AppColors.textTertiary,
+                      size: 32.sp,
+                    ),
+                    SizedBox(height: 8.h),
+                    Text(
+                      'Erro ao carregar',
+                      style: TextStyles.bodySmall.copyWith(
+                        color: AppColors.textTertiary,
+                        fontSize: 10.sp,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Gradient overlay
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.1),
+                    Colors.black.withOpacity(0.6),
+                  ],
+                  stops: const [0.0, 0.7, 1.0],
+                ),
+              ),
+            ),
+
+            // Option number
+            Positioned(
+              top: 16.h,
+              left: 16.w,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.8),
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                child: Text(
+                  'Opção $option',
+                  style: TextStyles.labelSmall.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11.sp,
                   ),
                 ),
               ),
+            ),
 
-              // Results overlay
-              if (_showResults) _buildResultsOverlay(option, percentage, isSelected),
+            // Results overlay
+            if (_showResults) _buildResultsOverlay(option, percentage, votes, isSelected),
 
-              // Voting button
-              if (!widget.hasUserVoted) _buildVoteButton(option),
-            ],
-          ),
+            // Vote button (when not voted)
+            if (!widget.hasUserVoted) _buildVoteButton(option),
+
+            // Selection indicator
+            if (isSelected) _buildSelectionIndicator(),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildResultsOverlay(int option, double percentage, bool isSelected) {
+  Widget _buildResultsOverlay(int option, double percentage, int votes, bool isSelected) {
     return AnimatedBuilder(
-      animation: _animationController,
+      animation: _resultsAnimationController,
       builder: (context, child) {
         return Positioned(
-          top: 16.h,
+          bottom: 16.h,
+          left: 16.w,
           right: 16.w,
-          child: Transform.scale(
-            scale: _scaleAnimation.value,
-            child: FadeTransition(
-              opacity: _fadeAnimation,
+          child: Transform.translate(
+            offset: Offset(0, 30.h * (1 - _resultsSlideAnimation.value)),
+            child: Opacity(
+              opacity: _resultsOpacityAnimation.value,
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.primary
-                      : Colors.black.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(20.r),
+                  gradient: LinearGradient(
+                    colors: isSelected
+                        ? [AppColors.primary, AppColors.secondary]
+                        : [Colors.black.withOpacity(0.8), Colors.black.withOpacity(0.6)],
+                  ),
+                  borderRadius: BorderRadius.circular(16.r),
                   boxShadow: [
                     BoxShadow(
-                      color: (isSelected ? AppColors.primary : Colors.black)
-                          .withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: Column(
                   children: [
-                    if (isSelected) ...[
-                      Icon(
-                        Icons.check_circle_rounded,
-                        color: Colors.white,
-                        size: 16.sp,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            if (isSelected) ...[
+                              Icon(
+                                Icons.check_circle_rounded,
+                                color: Colors.white,
+                                size: 16.sp,
+                              ),
+                              SizedBox(width: 6.w),
+                            ],
+                            Text(
+                              '${percentage.toStringAsFixed(0)}%',
+                              style: TextStyles.titleSmall.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          '$votes votos',
+                          style: TextStyles.bodySmall.copyWith(
+                            color: Colors.white.withOpacity(0.9),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8.h),
+                    // Progress bar
+                    Container(
+                      height: 4.h,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(2.r),
                       ),
-                      SizedBox(width: 6.w),
-                    ],
-                    Text(
-                      '${percentage.toStringAsFixed(0)}%',
-                      style: TextStyles.labelLarge.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: percentage / 100,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(2.r),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -441,82 +567,130 @@ class _PostCardState extends State<PostCard>
 
   Widget _buildVoteButton(int option) {
     return Positioned(
-      bottom: 16.h,
+      bottom: 20.h,
       left: 16.w,
       right: 16.w,
-      child: Container(
-        width: double.infinity,
-        child: ElevatedButton(
-          onPressed: () => _handleVote(option),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white.withOpacity(0.9),
-            foregroundColor: AppColors.primary,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16.r),
-            ),
-            padding: EdgeInsets.symmetric(vertical: 12.h),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.how_to_vote_rounded,
-                size: 18.sp,
-              ),
-              SizedBox(width: 8.w),
-              Text(
-                'Votar',
-                style: TextStyles.labelLarge.copyWith(
-                  fontWeight: FontWeight.w600,
+      child: AnimatedBuilder(
+        animation: _slideAnimationController,
+        builder: (context, child) {
+          return Transform.translate(
+            offset: Offset(0, 60.h * _slideAnimation.value),
+            child: Opacity(
+              opacity: 1 - _slideAnimation.value,
+              child: Container(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => _handleVote(option),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white.withOpacity(0.95),
+                    foregroundColor: AppColors.primary,
+                    elevation: 8,
+                    shadowColor: Colors.black.withOpacity(0.3),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16.r),
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 14.h),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.how_to_vote_rounded,
+                        size: 18.sp,
+                      ),
+                      SizedBox(width: 8.w),
+                      Text(
+                        'Votar',
+                        style: TextStyles.labelLarge.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildVotingSection() {
-    if (!_showResults) {
-      return SizedBox(height: 20.h);
-    }
-
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        return FadeTransition(
-          opacity: _fadeAnimation,
-          child: Container(
-            margin: EdgeInsets.all(20.w),
-            padding: EdgeInsets.all(20.w),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.primaryLight.withOpacity(0.1),
-                  AppColors.secondaryLight.withOpacity(0.1),
-                ],
+  Widget _buildSelectionIndicator() {
+    return Positioned.fill(
+      child: AnimatedBuilder(
+        animation: _slideAnimationController,
+        builder: (context, child) {
+          return Opacity(
+            opacity: _slideAnimation.value,
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: AppColors.primary,
+                  width: 3,
+                ),
               ),
-              borderRadius: BorderRadius.circular(20.r),
-              border: Border.all(
-                color: AppColors.primary.withOpacity(0.1),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                ),
               ),
             ),
-            child: Column(
-              children: [
-                Text(
-                  'Resultados da Votação',
-                  style: TextStyles.titleSmall.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.text,
-                  ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildEngagementSection() {
+    if (!_showResults) return const SizedBox.shrink();
+
+    return AnimatedBuilder(
+      animation: _resultsAnimationController,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, 20.h * (1 - _resultsSlideAnimation.value)),
+          child: Opacity(
+            opacity: _resultsOpacityAnimation.value,
+            child: Container(
+              margin: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
+              padding: EdgeInsets.all(16.w),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.primaryLight.withOpacity(0.1),
+                    AppColors.secondaryLight.withOpacity(0.1),
+                  ],
                 ),
-                SizedBox(height: 16.h),
-                _buildResultBar(1, widget.post.option1Votes, widget.post.option1Percentage),
-                SizedBox(height: 12.h),
-                _buildResultBar(2, widget.post.option2Votes, widget.post.option2Percentage),
-              ],
+                borderRadius: BorderRadius.circular(16.r),
+                border: Border.all(
+                  color: AppColors.primary.withOpacity(0.1),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.poll_rounded,
+                        color: AppColors.primary,
+                        size: 16.sp,
+                      ),
+                      SizedBox(width: 6.w),
+                      Text(
+                        'Resultados da Votação',
+                        style: TextStyles.labelMedium.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 12.h),
+                  _buildEngagementStats(),
+                ],
+              ),
             ),
           ),
         );
@@ -524,125 +698,125 @@ class _PostCardState extends State<PostCard>
     );
   }
 
-  Widget _buildResultBar(int option, int votes, double percentage) {
-    final isUserChoice = widget.userVote == option;
-    final isWinner = (option == 1 && widget.post.option1Votes >= widget.post.option2Votes) ||
-        (option == 2 && widget.post.option2Votes >= widget.post.option1Votes);
+  Widget _buildEngagementStats() {
+    final isOption1Winner = widget.post.option1Votes >= widget.post.option2Votes;
 
-    return Container(
-      height: 48.h,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(24.r),
-      ),
-      child: Stack(
-        children: [
-          AnimatedContainer(
-            duration: Duration(milliseconds: 800 + (option * 200)),
-            width: double.infinity * (percentage / 100),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isWinner ? [
-                  AppColors.primary,
-                  AppColors.primaryLight,
-                ] : [
-                  AppColors.textTertiary,
-                  AppColors.textTertiary.withOpacity(0.7),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(24.r),
-            ),
+    return Row(
+      children: [
+        Expanded(
+          child: _buildStatItem(
+            'Opção 1',
+            widget.post.option1Votes,
+            widget.post.option1Percentage,
+            isOption1Winner,
+            _selectedOption == 1,
           ),
+        ),
+        Container(
+          width: 1,
+          height: 40.h,
+          color: AppColors.border,
+          margin: EdgeInsets.symmetric(horizontal: 16.w),
+        ),
+        Expanded(
+          child: _buildStatItem(
+            'Opção 2',
+            widget.post.option2Votes,
+            widget.post.option2Percentage,
+            !isOption1Winner,
+            _selectedOption == 2,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatItem(String label, int votes, double percentage, bool isWinner, bool isUserChoice) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (isWinner) ...[
+              Icon(
+                Icons.emoji_events_rounded,
+                color: AppColors.primary,
+                size: 14.sp,
+              ),
+              SizedBox(width: 4.w),
+            ],
+            Text(
+              '${percentage.toStringAsFixed(0)}%',
+              style: TextStyles.titleSmall.copyWith(
+                fontWeight: FontWeight.w700,
+                color: isWinner ? AppColors.primary : AppColors.text,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 4.h),
+        Text(
+          '$votes votos',
+          style: TextStyles.bodySmall.copyWith(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        if (isUserChoice) ...[
+          SizedBox(height: 4.h),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 20.w),
-            height: 48.h,
-            child: Row(
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      isWinner ? Icons.emoji_events_rounded : Icons.circle_outlined,
-                      size: 16.sp,
-                      color: percentage > 30
-                          ? Colors.white
-                          : (isWinner ? AppColors.primary : AppColors.textSecondary),
-                    ),
-                    SizedBox(width: 8.w),
-                    Text(
-                      'Opção $option',
-                      style: TextStyles.labelLarge.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: percentage > 30
-                            ? Colors.white
-                            : AppColors.text,
-                      ),
-                    ),
-                    if (isUserChoice) ...[
-                      SizedBox(width: 8.w),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                        decoration: BoxDecoration(
-                          color: percentage > 30
-                              ? Colors.white.withOpacity(0.2)
-                              : AppColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        child: Text(
-                          'Seu voto',
-                          style: TextStyles.labelSmall.copyWith(
-                            color: percentage > 30
-                                ? Colors.white
-                                : AppColors.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const Spacer(),
-                Text(
-                  '${percentage.toStringAsFixed(0)}% ($votes)',
-                  style: TextStyles.labelMedium.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: percentage > 30
-                        ? Colors.white
-                        : AppColors.textSecondary,
-                  ),
-                ),
-              ],
+            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(10.r),
+            ),
+            child: Text(
+              'Seu voto',
+              style: TextStyles.labelSmall.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 9.sp,
+              ),
             ),
           ),
         ],
-      ),
+      ],
     );
   }
 
   Widget _buildFooter() {
     return Padding(
-      padding: EdgeInsets.all(20.w).copyWith(top: 0),
+      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 16.h),
       child: Row(
         children: [
           Container(
             padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
             decoration: BoxDecoration(
               color: AppColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(16.r),
+              borderRadius: BorderRadius.circular(20.r),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   Icons.how_to_vote_outlined,
-                  size: 16.sp,
+                  size: 14.sp,
                   color: AppColors.primary,
                 ),
-                SizedBox(width: 6.w),
+                SizedBox(width: 4.w),
                 Text(
-                  '${widget.post.totalVotes} votos',
-                  style: TextStyles.labelMedium.copyWith(
+                  '${widget.post.totalVotes}',
+                  style: TextStyles.labelSmall.copyWith(
                     color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                SizedBox(width: 2.w),
+                Text(
+                  'votos',
+                  style: TextStyles.labelSmall.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -653,18 +827,11 @@ class _PostCardState extends State<PostCard>
             Wrap(
               spacing: 6.w,
               children: widget.post.tags.take(3).map((tag) {
-                return Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Text(
-                    '#$tag',
-                    style: TextStyles.labelSmall.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
+                return Text(
+                  '#$tag',
+                  style: TextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
                   ),
                 );
               }).toList(),
@@ -703,45 +870,16 @@ class _PostCardState extends State<PostCard>
     }
   }
 
-  IconData _getOccasionIcon() {
-    switch (widget.post.occasion) {
-      case PostOccasion.trabalho:
-        return Icons.work_outline_rounded;
-      case PostOccasion.festa:
-        return Icons.celebration_outlined;
-      case PostOccasion.casual:
-        return Icons.weekend_outlined;
-      case PostOccasion.encontro:
-        return Icons.favorite_outline_rounded;
-      case PostOccasion.formatura:
-        return Icons.school_outlined;
-      case PostOccasion.casamento:
-        return Icons.church_outlined;
-      case PostOccasion.academia:
-        return Icons.fitness_center_outlined;
-      case PostOccasion.viagem:
-        return Icons.flight_outlined;
-      case PostOccasion.balada:
-        return Icons.nightlife_outlined;
-      case PostOccasion.praia:
-        return Icons.beach_access_outlined;
-      case PostOccasion.shopping:
-        return Icons.shopping_bag_outlined;
-      default:
-        return Icons.more_horiz_outlined;
-    }
-  }
-
   String _formatTimeAgo(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
 
     if (difference.inDays > 0) {
-      return '${difference.inDays}d atrás';
+      return '${difference.inDays}d';
     } else if (difference.inHours > 0) {
-      return '${difference.inHours}h atrás';
+      return '${difference.inHours}h';
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m atrás';
+      return '${difference.inMinutes}min';
     } else {
       return 'agora';
     }

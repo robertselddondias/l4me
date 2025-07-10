@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -6,7 +5,7 @@ import 'package:look4me/app/core/constants/app_colors.dart';
 import 'package:look4me/app/core/themes/text_styles.dart';
 import 'package:look4me/app/modules/create_post/controllers/create_post_controller.dart';
 import 'package:look4me/app/modules/create_post/widgets/image_picker_widget.dart';
-import 'package:look4me/app/modules/create_post/widgets/occasion_selector.dart';
+import 'package:look4me/app/modules/create_post/widgets/occasion_selector.dart'; // Certifique-se de que o import está correto
 import 'package:look4me/app/shared/components/custom_button.dart';
 import 'package:look4me/app/shared/components/custom_text_field.dart';
 
@@ -15,38 +14,44 @@ class CreatePostView extends GetView<CreatePostController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildAppBar(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(20.w),
-                child: Form(
-                  key: controller.formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildHeader(),
-                      SizedBox(height: 24.h),
-                      _buildDescriptionField(),
-                      SizedBox(height: 24.h),
-                      _buildImagesSection(),
-                      SizedBox(height: 24.h),
-                      _buildOccasionSection(),
-                      SizedBox(height: 24.h),
-                      _buildTagsSection(),
-                      SizedBox(height: 32.h),
-                      _buildCreateButton(),
-                      SizedBox(height: 20.h),
-                    ],
+    return GestureDetector(
+      onTap: () {
+        // Desfoca o campo de texto atual, fechando o teclado
+        FocusScope.of(context).unfocus();
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildAppBar(),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(20.w),
+                  child: Form(
+                    key: controller.formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeader(),
+                        SizedBox(height: 24.h),
+                        _buildDescriptionField(),
+                        SizedBox(height: 24.h),
+                        _buildImagesSection(),
+                        SizedBox(height: 24.h),
+                        _buildOccasionSection(),
+                        SizedBox(height: 24.h),
+                        _buildTagsSection(),
+                        SizedBox(height: 32.h),
+                        _buildCreateButton(),
+                        SizedBox(height: 20.h),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
