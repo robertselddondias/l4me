@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "560204854509",
+    "project_id": "look4me-app2",
+    "storage_bucket": "look4me-app2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:560204854509:android:65818a65d7a476d03e08e4",
+        "android_client_info": {
+          "package_name": "com.selddon.look4me"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "560204854509-ejrtc65tuoe64kt8a1rhv7dhr52qlcvc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAV02EWrAtyJ9R3zlnzywHvXy83elDxuq8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "560204854509-ejrtc65tuoe64kt8a1rhv7dhr52qlcvc.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "560204854509-6a6786ke6qnkdj20dh460kv243hj8bd2.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.selddon.look4me"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
