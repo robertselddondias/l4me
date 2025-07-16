@@ -10,15 +10,15 @@ class CategoryFilter extends StatelessWidget {
   final Function(String) onCategorySelected;
 
   const CategoryFilter({
-    Key? key,
+    super.key,
     required this.categories,
     required this.selectedCategory,
     required this.onCategorySelected,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: 44.h,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,

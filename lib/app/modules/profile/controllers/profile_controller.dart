@@ -8,6 +8,7 @@ import 'package:look4me/app/data/repositories/user_repository.dart';
 import 'package:look4me/app/data/services/firebase_service.dart';
 import 'package:look4me/app/data/services/storage_service.dart';
 import 'package:look4me/app/routes/app_routes.dart';
+import 'package:look4me/app/data/repositories/auth_repository.dart';
 
 class ProfileController extends GetxController {
   final UserRepository _userRepository = UserRepository();
@@ -92,7 +93,7 @@ class ProfileController extends GetxController {
     try {
       final pickedFile = await _imagePicker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 80,
+        imageQuality: 75, // Ajustado para reduzir o tamanho do arquivo
         maxWidth: 800,
         maxHeight: 800,
       );
@@ -188,7 +189,7 @@ class ProfileController extends GetxController {
 
       if (result == true) {
         isLoading.value = true;
-        await FirebaseService.auth.signOut();
+        await Get.find<AuthRepository>().signOut();
         Get.offAllNamed(AppRoutes.LOGIN);
       }
     } catch (e) {
@@ -197,6 +198,40 @@ class ProfileController extends GetxController {
       isLoading.value = false;
     }
   }
+
+  Future<void> deleteAccount() async {
+    try {
+      final result = await Get.dialog<bool>(
+        AlertDialog(
+          title: const Text('Deletar conta'),
+          content: const Text('Esta ação é irreversível. Tem certeza que deseja deletar sua conta?'),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(result: false),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Get.back(result: true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Deletar'),
+            ),
+          ],
+        ),
+      );
+
+      if (result == true) {
+        isLoading.value = true;
+        await Get.find<AuthRepository>().deleteAccount();
+        Get.offAllNamed(AppRoutes.LOGIN);
+        Get.snackbar('Sucesso', 'Sua conta foi deletada com sucesso!');
+      }
+    } catch (e) {
+      Get.snackbar('Erro', 'Erro ao deletar conta: ${e.toString()}');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
 
   Future<void> deletePost(String postId) async {
     try {
@@ -211,8 +246,8 @@ class ProfileController extends GetxController {
             ),
             TextButton(
               onPressed: () => Get.back(result: true),
-              child: const Text('Deletar'),
               style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Deletar'),
             ),
           ],
         ),

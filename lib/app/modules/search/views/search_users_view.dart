@@ -10,7 +10,7 @@ import 'package:look4me/app/shared/components/empty_state.dart';
 import 'package:look4me/app/shared/components/loading_widget.dart';
 
 class SearchUsersView extends GetView<SearchL4MController> {
-  const SearchUsersView({Key? key}) : super(key: key);
+  const SearchUsersView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -31,13 +31,13 @@ class SearchUsersView extends GetView<SearchL4MController> {
   Widget _buildHeader() {
     return Container(
       padding: EdgeInsets.all(20.w),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.surface,
         boxShadow: [
           BoxShadow(
             color: AppColors.shadowLight,
             blurRadius: 10,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -47,7 +47,7 @@ class SearchUsersView extends GetView<SearchL4MController> {
             width: 40.w,
             height: 40.h,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
+              gradient: const LinearGradient(
                 colors: [AppColors.secondary, AppColors.accent],
               ),
               borderRadius: BorderRadius.circular(12.r),
@@ -107,7 +107,7 @@ class SearchUsersView extends GetView<SearchL4MController> {
       }
 
       if (controller.searchResults.isEmpty) {
-        return EmptyState(
+        return const EmptyState(
           icon: Icons.person_search_outlined,
           title: 'Nenhuma usuária encontrada',
           subtitle: 'Tente buscar por outro nome ou verifique a ortografia',
@@ -188,7 +188,7 @@ class SearchUsersView extends GetView<SearchL4MController> {
     return Column(
       children: [
         SizedBox(height: 40.h),
-        EmptyState(
+        const EmptyState(
           icon: Icons.search_outlined,
           title: 'Comece a buscar',
           subtitle: 'Digite o nome de uma usuária para encontrar pessoas incríveis na comunidade Look4Me',
@@ -202,7 +202,7 @@ class SearchUsersView extends GetView<SearchL4MController> {
   Widget _buildSuggestedUsers() {
     return Obx(() {
       if (controller.isLoadingPopular.value) {
-        return Container(
+        return SizedBox(
           height: 200.h,
           child: const LoadingWidget(showShimmer: false),
         );
@@ -233,7 +233,7 @@ class SearchUsersView extends GetView<SearchL4MController> {
               showFollowButton: true,
               onFollowToggle: () => controller.toggleFollowUser(user.id),
             ),
-          )).toList(),
+          )),
         ],
       );
     });

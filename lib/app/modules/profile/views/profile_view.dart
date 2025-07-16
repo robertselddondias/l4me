@@ -11,7 +11,7 @@ import 'package:look4me/app/shared/components/empty_state.dart';
 import 'package:look4me/app/shared/components/loading_widget.dart';
 
 class ProfileView extends GetView<ProfileController> {
-  const ProfileView({Key? key}) : super(key: key);
+  const ProfileView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +68,7 @@ class ProfileView extends GetView<ProfileController> {
       ),
       actions: [
         PopupMenuButton<String>(
-          icon: Icon(
+          icon: const Icon(
             Icons.more_vert_rounded,
             color: AppColors.text,
           ),
@@ -152,10 +152,10 @@ class ProfileView extends GetView<ProfileController> {
           color: isActive ? AppColors.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(12.r),
           boxShadow: isActive ? [
-            BoxShadow(
+            const BoxShadow(
               color: AppColors.shadowLight,
               blurRadius: 8,
-              offset: const Offset(0, 2),
+              offset: Offset(0, 2),
             ),
           ] : null,
         ),
@@ -269,11 +269,11 @@ class ProfileView extends GetView<ProfileController> {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: AppColors.shadowLight,
             blurRadius: 10,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),

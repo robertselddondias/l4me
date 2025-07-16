@@ -203,30 +203,30 @@ class StoriesController extends GetxController {
   void showImageSourceDialog() {
     Get.bottomSheet(
       Container(
-        padding: EdgeInsets.all(20),
-        decoration: BoxDecoration(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            const Text(
               'Adicionar Imagem',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ListTile(
-              leading: Icon(Icons.photo_library),
-              title: Text('Galeria'),
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Galeria'),
               onTap: () {
                 Get.back();
                 pickImage();
               },
             ),
             ListTile(
-              leading: Icon(Icons.camera_alt),
-              title: Text('Câmera'),
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Câmera'),
               onTap: () {
                 Get.back();
                 takePhoto();
@@ -234,8 +234,8 @@ class StoriesController extends GetxController {
             ),
             if (selectedImagePath.value.isNotEmpty)
               ListTile(
-                leading: Icon(Icons.delete, color: Colors.red),
-                title: Text('Remover', style: TextStyle(color: Colors.red)),
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text('Remover', style: TextStyle(color: Colors.red)),
                 onTap: () {
                   Get.back();
                   removeImage();

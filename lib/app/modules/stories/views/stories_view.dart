@@ -9,7 +9,7 @@ import 'package:look4me/app/shared/components/empty_state.dart';
 import 'package:look4me/app/shared/components/loading_widget.dart';
 
 class StoriesView extends GetView<StoriesController> {
-  const StoriesView({Key? key}) : super(key: key);
+  const StoriesView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -30,13 +30,13 @@ class StoriesView extends GetView<StoriesController> {
   Widget _buildAppBar() {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.surface,
         boxShadow: [
           BoxShadow(
             color: AppColors.shadowLight,
             blurRadius: 10,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),

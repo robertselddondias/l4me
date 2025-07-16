@@ -37,10 +37,12 @@ void main() async {
 
   Get.put(FirebaseService());
 
-  runApp(Look4MeApp());
+  runApp(const Look4MeApp());
 }
 
 class Look4MeApp extends StatelessWidget {
+  const Look4MeApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(

@@ -10,7 +10,7 @@ import 'package:look4me/app/shared/components/custom_button.dart';
 import 'package:look4me/app/shared/components/custom_text_field.dart';
 
 class RegisterView extends GetView<AuthController> {
-  const RegisterView({Key? key}) : super(key: key);
+  const RegisterView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -395,8 +395,8 @@ class RegisterView extends GetView<AuthController> {
                   color: AppColors.textSecondary,
                   height: 1.4,
                 ),
-                children: [
-                  const TextSpan(text: 'Ao criar uma conta, você concorda com nossos '),
+                children: const [
+                  TextSpan(text: 'Ao criar uma conta, você concorda com nossos '),
                   TextSpan(
                     text: 'Termos de Uso',
                     style: TextStyle(
@@ -404,7 +404,7 @@ class RegisterView extends GetView<AuthController> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const TextSpan(text: ' e '),
+                  TextSpan(text: ' e '),
                   TextSpan(
                     text: 'Política de Privacidade',
                     style: TextStyle(
@@ -412,7 +412,7 @@ class RegisterView extends GetView<AuthController> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const TextSpan(text: '.'),
+                  TextSpan(text: '.'),
                 ],
               ),
             ),
@@ -504,7 +504,9 @@ class RegisterView extends GetView<AuthController> {
 
     // Contains letters and numbers
     if (password.contains(RegExp(r'[A-Za-z]')) &&
-        password.contains(RegExp(r'[0-9]'))) strength++;
+        password.contains(RegExp(r'[0-9]'))) {
+      strength++;
+    }
 
     // Contains special characters
     if (password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) strength++;

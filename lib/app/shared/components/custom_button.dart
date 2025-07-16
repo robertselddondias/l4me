@@ -24,7 +24,7 @@ class CustomButton extends StatelessWidget {
   final Widget? child;
 
   const CustomButton({
-    Key? key,
+    super.key,
     required this.text,
     this.onPressed,
     this.type = ButtonType.filled,
@@ -40,7 +40,7 @@ class CustomButton extends StatelessWidget {
     this.padding,
     this.borderRadius,
     this.child,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

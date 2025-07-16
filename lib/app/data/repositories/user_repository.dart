@@ -69,7 +69,7 @@ class UserRepository {
     try {
       final snapshot = await _usersCollection
           .where('name', isGreaterThanOrEqualTo: query)
-          .where('name', isLessThanOrEqualTo: query + '\uf8ff')
+          .where('name', isLessThanOrEqualTo: '$query\uf8ff')
           .limit(20)
           .get();
 

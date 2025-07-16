@@ -9,7 +9,7 @@ import 'package:look4me/app/shared/components/custom_button.dart';
 import 'package:look4me/app/shared/components/custom_text_field.dart';
 
 class EditProfileView extends GetView<ProfileController> {
-  const EditProfileView({Key? key}) : super(key: key);
+  const EditProfileView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -48,13 +48,13 @@ class EditProfileView extends GetView<ProfileController> {
   Widget _buildAppBar() {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.surface,
         boxShadow: [
           BoxShadow(
             color: AppColors.shadowLight,
             blurRadius: 10,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -89,7 +89,7 @@ class EditProfileView extends GetView<ProfileController> {
               ? SizedBox(
             width: 20.w,
             height: 20.h,
-            child: CircularProgressIndicator(
+            child: const CircularProgressIndicator(
               strokeWidth: 2,
               color: AppColors.primary,
             ),
@@ -159,7 +159,7 @@ class EditProfileView extends GetView<ProfileController> {
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Container(
                   color: AppColors.primaryLight,
-                  child: Center(
+                  child: const Center(
                     child: CircularProgressIndicator(
                       color: AppColors.primary,
                       strokeWidth: 2,
@@ -180,25 +180,25 @@ class EditProfileView extends GetView<ProfileController> {
               height: 40.h,
               decoration: BoxDecoration(
                 gradient: isUpdating
-                    ? LinearGradient(colors: [AppColors.textTertiary, AppColors.textTertiary])
+                    ? const LinearGradient(colors: [AppColors.textTertiary, AppColors.textTertiary])
                     : AppColors.primaryGradient,
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: AppColors.surface,
                   width: 3,
                 ),
-                boxShadow: [
+                boxShadow: const [
                   BoxShadow(
                     color: AppColors.shadow,
                     blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    offset: Offset(0, 2),
                   ),
                 ],
               ),
               child: isUpdating
                   ? Padding(
                 padding: EdgeInsets.all(10.w),
-                child: CircularProgressIndicator(
+                child: const CircularProgressIndicator(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(
                     AppColors.surface,
@@ -219,7 +219,7 @@ class EditProfileView extends GetView<ProfileController> {
 
   Widget _buildDefaultAvatar() {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: AppColors.primaryGradient,
         shape: BoxShape.circle,
       ),
@@ -237,11 +237,11 @@ class EditProfileView extends GetView<ProfileController> {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20.r),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: AppColors.shadowLight,
             blurRadius: 10,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -324,11 +324,11 @@ class EditProfileView extends GetView<ProfileController> {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20.r),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: AppColors.shadowLight,
             blurRadius: 10,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -389,7 +389,7 @@ class EditProfileView extends GetView<ProfileController> {
                     padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                     decoration: BoxDecoration(
                       gradient: isSelected
-                          ? LinearGradient(
+                          ? const LinearGradient(
                         colors: [AppColors.secondary, AppColors.accent],
                       )
                           : null,

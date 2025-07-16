@@ -11,7 +11,7 @@ import 'package:look4me/app/modules/stories/widgets/story_card.dart';
 import 'package:look4me/app/shared/components/loading_widget.dart';
 
 class ExploreView extends GetView<ExploreController> {
-  const ExploreView({Key? key}) : super(key: key);
+  const ExploreView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +60,7 @@ class ExploreView extends GetView<ExploreController> {
               width: 36.w, // Tamanho reduzido
               height: 36.h,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
+                gradient: const LinearGradient(
                   colors: [AppColors.accent, AppColors.primary],
                 ),
                 borderRadius: BorderRadius.circular(10.r),

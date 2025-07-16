@@ -9,7 +9,7 @@ import 'package:look4me/app/modules/explore/controllers/explore_controller.dart'
 import 'package:look4me/app/shared/components/loading_widget.dart';
 
 class PopularUsersSection extends GetView<ExploreController> {
-  const PopularUsersSection({Key? key}) : super(key: key);
+  const PopularUsersSection({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +57,7 @@ class PopularUsersSection extends GetView<ExploreController> {
       }
 
       if (controller.popularUsers.isEmpty) {
-        return Container(
+        return SizedBox(
           height: 100.h,
           child: Center(
             child: Text(
@@ -96,11 +96,11 @@ class PopularUsersSection extends GetView<ExploreController> {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(16.r),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
               color: AppColors.shadowLight,
               blurRadius: 8,
-              offset: const Offset(0, 2),
+              offset: Offset(0, 2),
             ),
           ],
         ),
@@ -177,14 +177,14 @@ class PopularUsersSection extends GetView<ExploreController> {
       child: Container(
         width: 48.w,
         height: 48.h,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           shape: BoxShape.circle,
           gradient: AppColors.primaryGradient,
         ),
         child: Padding(
           padding: EdgeInsets.all(2.w), // Agora o padding está no lugar correto
           child: Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.surface,
             ),
@@ -245,7 +245,7 @@ class PopularUsersSection extends GetView<ExploreController> {
             ),
           ),
           const Spacer(),
-          Container(
+          SizedBox(
             width: double.infinity,
             height: 24.h,
             child: ElevatedButton(

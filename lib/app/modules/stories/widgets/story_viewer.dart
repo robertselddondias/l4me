@@ -15,12 +15,12 @@ class StoryViewer extends StatefulWidget {
   final VoidCallback? onClose;
 
   const StoryViewer({
-    Key? key,
+    super.key,
     required this.stories,
     this.initialIndex = 0,
     this.onStoryViewed,
     this.onClose,
-  }) : super(key: key);
+  });
 
   @override
   State<StoryViewer> createState() => _StoryViewerState();
@@ -218,7 +218,7 @@ class _StoryViewerState extends State<StoryViewer>
   }
 
   Widget _buildStoryPage(StoryModel story) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: double.infinity,
       child: Stack(
@@ -260,7 +260,7 @@ class _StoryViewerState extends State<StoryViewer>
       fit: BoxFit.cover,
       placeholder: (context, url) => Container(
         color: AppColors.surfaceVariant,
-        child: Center(
+        child: const Center(
           child: CircularProgressIndicator(
             color: AppColors.primary,
             strokeWidth: 3,
@@ -273,7 +273,7 @@ class _StoryViewerState extends State<StoryViewer>
 
   Widget _buildGradientBackground() {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,

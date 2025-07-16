@@ -10,7 +10,7 @@ import 'package:look4me/app/shared/components/custom_button.dart';
 import 'package:look4me/app/shared/components/custom_text_field.dart';
 
 class CreateStoryView extends GetView<StoriesController> {
-  const CreateStoryView({Key? key}) : super(key: key);
+  const CreateStoryView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -54,13 +54,13 @@ class CreateStoryView extends GetView<StoriesController> {
   Widget _buildAppBar() {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.surface,
         boxShadow: [
           BoxShadow(
             color: AppColors.shadowLight,
             blurRadius: 10,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -306,7 +306,7 @@ class CreateStoryView extends GetView<StoriesController> {
               ),
             ),
             SizedBox(width: 8.w),
-            Text('•', style: TextStyle(color: AppColors.textTertiary)),
+            const Text('•', style: TextStyle(color: AppColors.textTertiary)),
             SizedBox(width: 8.w),
             Icon(
               Icons.photo_library_outlined,

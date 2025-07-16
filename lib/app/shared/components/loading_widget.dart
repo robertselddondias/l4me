@@ -8,10 +8,10 @@ class LoadingWidget extends StatelessWidget {
   final bool showShimmer;
 
   const LoadingWidget({
-    Key? key,
+    super.key,
     this.message,
     this.showShimmer = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +23,7 @@ class LoadingWidget extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(
+          const CircularProgressIndicator(
             color: AppColors.primary,
             strokeWidth: 3,
           ),
@@ -82,7 +82,7 @@ class LoadingWidget extends StatelessWidget {
           Container(
             width: 40.w,
             height: 40.h,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.shimmer,
               shape: BoxShape.circle,
             ),

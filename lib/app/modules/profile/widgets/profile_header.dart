@@ -13,12 +13,12 @@ class ProfileHeader extends StatelessWidget {
   final bool isUpdating;
 
   const ProfileHeader({
-    Key? key,
+    super.key,
     this.user,
     this.onEditProfile,
     this.onChangePhoto,
     this.isUpdating = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +72,7 @@ class ProfileHeader extends StatelessWidget {
               fit: BoxFit.cover,
               placeholder: (context, url) => Container(
                 color: AppColors.primaryLight,
-                child: Center(
+                child: const Center(
                   child: CircularProgressIndicator(
                     color: AppColors.primary,
                     strokeWidth: 2,
@@ -99,18 +99,18 @@ class ProfileHeader extends StatelessWidget {
                   color: AppColors.surface,
                   width: 2,
                 ),
-                boxShadow: [
+                boxShadow: const [
                   BoxShadow(
                     color: AppColors.shadow,
                     blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    offset: Offset(0, 2),
                   ),
                 ],
               ),
               child: isUpdating
                   ? Padding(
                 padding: EdgeInsets.all(8.w),
-                child: CircularProgressIndicator(
+                child: const CircularProgressIndicator(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(
                     AppColors.onPrimary,
@@ -131,7 +131,7 @@ class ProfileHeader extends StatelessWidget {
 
   Widget _buildDefaultAvatar() {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: AppColors.primaryGradient,
         shape: BoxShape.circle,
       ),

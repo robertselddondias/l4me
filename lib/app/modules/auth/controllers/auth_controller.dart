@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../../../data/models/user_model.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../data/repositories/user_repository.dart';
@@ -247,7 +245,7 @@ class AuthController extends GetxController {
   }
 
   Future<void> _navigateToHome() async {
-    Get.offAllNamed(AppRoutes.MAIN);
+    Get.offAllNamed(AppRoutes.MAIN_NAVIGATION);
   }
 
   void _showErrorSnackbar(String title, String message) {

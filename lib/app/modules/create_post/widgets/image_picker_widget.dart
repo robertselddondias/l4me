@@ -14,7 +14,7 @@ class ImagePickerWidget extends StatelessWidget {
   final double? width;
 
   const ImagePickerWidget({
-    Key? key,
+    super.key,
     required this.imagePath,
     required this.label,
     required this.onTap,
@@ -22,7 +22,7 @@ class ImagePickerWidget extends StatelessWidget {
     this.isRequired = false,
     this.height,
     this.width,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -9,7 +9,7 @@ import 'package:look4me/app/shared/components/custom_button.dart';
 import 'package:look4me/app/shared/components/custom_text_field.dart';
 
 class PhoneAuthView extends GetView<AuthController> {
-  const PhoneAuthView({Key? key}) : super(key: key);
+  const PhoneAuthView({super.key});
 
   @override
   Widget build(BuildContext context) {

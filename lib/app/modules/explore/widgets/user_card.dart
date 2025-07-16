@@ -15,7 +15,7 @@ class UserCard extends StatelessWidget {
   final VoidCallback? onFollowToggle;
 
   const UserCard({
-    Key? key,
+    super.key,
     required this.user,
     this.onTap,
     this.onRemove,
@@ -23,7 +23,7 @@ class UserCard extends StatelessWidget {
     this.showFollowButton = true,
     this.isFollowing = false,
     this.onFollowToggle,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -32,11 +32,11 @@ class UserCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: AppColors.shadowLight,
             blurRadius: 8,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -188,7 +188,7 @@ class UserCard extends StatelessWidget {
   }
 
   Widget _buildFollowButton() {
-    return Container(
+    return SizedBox(
       height: 32.h,
       child: ElevatedButton(
         onPressed: onFollowToggle,
@@ -199,7 +199,7 @@ class UserCard extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 16.w),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16.r),
-            side: isFollowing ? BorderSide(color: AppColors.border) : BorderSide.none,
+            side: isFollowing ? const BorderSide(color: AppColors.border) : BorderSide.none,
           ),
         ),
         child: Text(

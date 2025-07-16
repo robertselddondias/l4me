@@ -9,7 +9,7 @@ import 'package:look4me/app/modules/search/views/search_users_view.dart';
 import 'package:look4me/app/modules/explore/views/explore_view.dart';
 
 class MainNavigation extends GetView<NavigationController> {
-  const MainNavigation({Key? key}) : super(key: key);
+  const MainNavigation({super.key});
 
   @override
   Widget build(BuildContext context) {

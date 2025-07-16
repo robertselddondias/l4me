@@ -12,12 +12,12 @@ class PostCard extends StatefulWidget {
   final Function(int) onVote;
 
   const PostCard({
-    Key? key,
+    super.key,
     required this.post,
     required this.hasUserVoted,
     this.userVote,
     required this.onVote,
-  }) : super(key: key);
+  });
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -232,7 +232,7 @@ class _PostCardState extends State<PostCard>
                     Container(
                       width: 4.w,
                       height: 4.h,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: AppColors.textTertiary,
                         shape: BoxShape.circle,
                       ),
@@ -300,7 +300,7 @@ class _PostCardState extends State<PostCard>
       children: [
         AspectRatio(
           aspectRatio: 0.8, // Mais alto que largo, como Instagram
-          child: Container(
+          child: SizedBox(
             width: double.infinity,
             child: _buildImagesSection(),
           ),
@@ -384,7 +384,7 @@ class _PostCardState extends State<PostCard>
                     SizedBox(
                       width: 24.w,
                       height: 24.h,
-                      child: CircularProgressIndicator(
+                      child: const CircularProgressIndicator(
                         strokeWidth: 2,
                         color: AppColors.primary,
                       ),
@@ -577,7 +577,7 @@ class _PostCardState extends State<PostCard>
             offset: Offset(0, 60.h * _slideAnimation.value),
             child: Opacity(
               opacity: 1 - _slideAnimation.value,
-              child: Container(
+              child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () => _handleVote(option),

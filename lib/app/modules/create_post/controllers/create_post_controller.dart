@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:look4me/app/modules/navigation/controllers/navigation_controller.dart';
 import '../../../data/models/post_model.dart';
-import '../../../data/models/user_model.dart';
 import '../../../data/repositories/post_repository.dart';
 import '../../../data/repositories/user_repository.dart';
 import '../../../data/services/firebase_service.dart';
@@ -216,30 +215,30 @@ class CreatePostController extends GetxController {
   void showImageSourceDialog(int option) {
     Get.bottomSheet(
       Container(
-        padding: EdgeInsets.all(20),
-        decoration: BoxDecoration(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            const Text(
               'Selecionar Imagem',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ListTile(
-              leading: Icon(Icons.photo_library),
-              title: Text('Galeria'),
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Galeria'),
               onTap: () {
                 Get.back();
                 pickImage(option);
               },
             ),
             ListTile(
-              leading: Icon(Icons.camera_alt),
-              title: Text('Câmera'),
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Câmera'),
               onTap: () {
                 Get.back();
                 takePhoto(option);
@@ -248,8 +247,8 @@ class CreatePostController extends GetxController {
             if ((option == 1 && image1Path.value.isNotEmpty) ||
                 (option == 2 && image2Path.value.isNotEmpty))
               ListTile(
-                leading: Icon(Icons.delete, color: Colors.red),
-                title: Text('Remover', style: TextStyle(color: Colors.red)),
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text('Remover', style: TextStyle(color: Colors.red)),
                 onTap: () {
                   Get.back();
                   removeImage(option);

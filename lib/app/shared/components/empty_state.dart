@@ -13,14 +13,14 @@ class EmptyState extends StatelessWidget {
   final Widget? customAction;
 
   const EmptyState({
-    Key? key,
+    super.key,
     required this.icon,
     required this.title,
     required this.subtitle,
     this.actionText,
     this.onAction,
     this.customAction,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +49,7 @@ class EmptyState extends StatelessWidget {
     return Container(
       width: 80.w,
       height: 80.h,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.primaryLight,
         shape: BoxShape.circle,
       ),

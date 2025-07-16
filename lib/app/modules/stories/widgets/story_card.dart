@@ -11,10 +11,10 @@ class StoryCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   const StoryCard({
-    Key? key,
+    super.key,
     required this.story,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,11 +23,11 @@ class StoryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20.r),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: AppColors.shadow,
             blurRadius: 15,
-            offset: const Offset(0, 5),
+            offset: Offset(0, 5),
           ),
         ],
       ),
@@ -125,7 +125,7 @@ class StoryCard extends StatelessWidget {
           fit: BoxFit.cover,
           placeholder: (context, url) => Container(
             color: AppColors.surfaceVariant,
-            child: Center(
+            child: const Center(
               child: CircularProgressIndicator(
                 color: AppColors.primary,
                 strokeWidth: 2,

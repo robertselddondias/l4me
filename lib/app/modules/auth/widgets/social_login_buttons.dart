@@ -10,12 +10,12 @@ class SocialLoginButtons extends StatelessWidget {
   final bool isLoading;
 
   const SocialLoginButtons({
-    Key? key,
+    super.key,
     this.onGooglePressed,
     this.onApplePressed,
     this.onPhonePressed,
     this.isLoading = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

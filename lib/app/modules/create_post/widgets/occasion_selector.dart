@@ -10,11 +10,11 @@ class OccasionSelector extends StatelessWidget {
   final Function(PostOccasion) onOccasionSelected;
 
   const OccasionSelector({
-    Key? key,
+    super.key,
     required this.occasions,
     required this.selectedOccasion,
     required this.onOccasionSelected,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -60,10 +60,10 @@ class OccasionSelector extends StatelessWidget {
               offset: const Offset(0, 2),
             ),
           ] : [
-            BoxShadow(
+            const BoxShadow(
               color: AppColors.shadowLight,
               blurRadius: 4,
-              offset: const Offset(0, 1),
+              offset: Offset(0, 1),
             ),
           ],
         ),

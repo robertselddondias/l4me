@@ -10,7 +10,7 @@ import 'package:look4me/app/shared/components/custom_button.dart';
 import 'package:look4me/app/shared/components/custom_text_field.dart';
 
 class LoginView extends GetView<AuthController> {
-  const LoginView({Key? key}) : super(key: key);
+  const LoginView({super.key});
 
   @override
   Widget build(BuildContext context) {

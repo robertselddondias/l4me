@@ -6,7 +6,7 @@ import '../../../core/themes/text_styles.dart';
 import '../controllers/explore_controller.dart';
 
 class CategoriesSection extends GetView<ExploreController> {
-  const CategoriesSection({Key? key}) : super(key: key);
+  const CategoriesSection({super.key});
 
   @override
   Widget build(BuildContext context) {

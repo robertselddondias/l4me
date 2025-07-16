@@ -9,7 +9,7 @@ import 'package:look4me/app/modules/explore/controllers/explore_controller.dart'
 import 'package:look4me/app/shared/components/loading_widget.dart';
 
 class TrendingLooksSection extends GetView<ExploreController> {
-  const TrendingLooksSection({Key? key}) : super(key: key);
+  const TrendingLooksSection({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +57,7 @@ class TrendingLooksSection extends GetView<ExploreController> {
       }
 
       if (controller.trendingPosts.isEmpty) {
-        return Container(
+        return SizedBox(
           height: 100.h,
           child: Center(
             child: Text(
@@ -96,11 +96,11 @@ class TrendingLooksSection extends GetView<ExploreController> {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(20.r),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
               color: AppColors.shadowLight,
               blurRadius: 10,
-              offset: const Offset(0, 4),
+              offset: Offset(0, 4),
             ),
           ],
         ),
@@ -118,7 +118,7 @@ class TrendingLooksSection extends GetView<ExploreController> {
   Widget _buildPostImages(PostModel post) {
     return Expanded(
       flex: 3,
-      child: Container(
+      child: SizedBox(
         width: double.infinity,
         child: ClipRRect(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
@@ -133,7 +133,7 @@ class TrendingLooksSection extends GetView<ExploreController> {
                       height: double.infinity,
                       placeholder: (context, url) => Container(
                         color: AppColors.surfaceVariant,
-                        child: Center(
+                        child: const Center(
                           child: CircularProgressIndicator(
                             color: AppColors.primary,
                             strokeWidth: 2,
@@ -142,7 +142,7 @@ class TrendingLooksSection extends GetView<ExploreController> {
                       ),
                       errorWidget: (context, url, error) => Container(
                         color: AppColors.surfaceVariant,
-                        child: Icon(
+                        child: const Icon(
                           Icons.broken_image_outlined,
                           color: AppColors.textTertiary,
                         ),
@@ -157,7 +157,7 @@ class TrendingLooksSection extends GetView<ExploreController> {
                       height: double.infinity,
                       placeholder: (context, url) => Container(
                         color: AppColors.surfaceVariant,
-                        child: Center(
+                        child: const Center(
                           child: CircularProgressIndicator(
                             color: AppColors.primary,
                             strokeWidth: 2,
@@ -166,7 +166,7 @@ class TrendingLooksSection extends GetView<ExploreController> {
                       ),
                       errorWidget: (context, url, error) => Container(
                         color: AppColors.surfaceVariant,
-                        child: Icon(
+                        child: const Icon(
                           Icons.broken_image_outlined,
                           color: AppColors.textTertiary,
                         ),
@@ -307,7 +307,7 @@ class TrendingLooksSection extends GetView<ExploreController> {
         Container(
           width: 16.w,
           height: 16.h,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: AppColors.primary,
             shape: BoxShape.circle,
           ),

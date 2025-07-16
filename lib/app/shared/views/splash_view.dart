@@ -7,7 +7,7 @@ import 'package:look4me/app/data/services/firebase_service.dart';
 import 'package:look4me/app/routes/app_routes.dart';
 
 class SplashView extends StatefulWidget {
-  const SplashView({Key? key}) : super(key: key);
+  const SplashView({super.key});
 
   @override
   State<SplashView> createState() => _SplashViewState();
@@ -55,7 +55,7 @@ class _SplashViewState extends State<SplashView>
     await Future.delayed(const Duration(milliseconds: 2500));
 
     if (FirebaseService.isAuthenticated) {
-      Get.offAllNamed(AppRoutes.MAIN);
+      Get.offAllNamed(AppRoutes.MAIN_NAVIGATION);
     } else {
       Get.offAllNamed(AppRoutes.LOGIN);
     }
@@ -110,11 +110,11 @@ class _SplashViewState extends State<SplashView>
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(30.r),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: AppColors.shadow,
             blurRadius: 20,
-            offset: const Offset(0, 10),
+            offset: Offset(0, 10),
           ),
         ],
       ),
