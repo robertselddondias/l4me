@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:look4me/app/data/models/post_model.dart';
@@ -93,20 +94,6 @@ class HomeController extends GetxController {
       }
     } catch (e) {
       print('Erro ao carregar seguindo: $e');
-    }
-  }
-
-  // NOVA: Carregar posts salvos
-  Future<void> loadSavedPosts() async {
-    try {
-      final currentUser = FirebaseService.currentUser;
-      if (currentUser != null) {
-        // TODO: Implementar busca real no Firestore
-        // Por enquanto, usar lista vazia
-        savedPosts.clear();
-      }
-    } catch (e) {
-      print('Erro ao carregar posts salvos: $e');
     }
   }
 
@@ -322,42 +309,6 @@ class HomeController extends GetxController {
     }
   }
 
-  // NOVA: Salvar/dessalvar post
-  Future<void> toggleSavePost(String postId) async {
-    try {
-      final currentUser = FirebaseService.currentUser;
-      if (currentUser == null) return;
-
-      if (savedPosts.contains(postId)) {
-        // Remover dos salvos
-        savedPosts.remove(postId);
-        // TODO: Implementar no Firestore
-
-        Get.snackbar(
-          'Removido',
-          'Post removido dos salvos',
-          backgroundColor: const Color(0xFFF59E0B),
-          colorText: const Color(0xFFFFFFFF),
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      } else {
-        // Salvar
-        savedPosts.add(postId);
-        // TODO: Implementar no Firestore
-
-        Get.snackbar(
-          'Salvo',
-          'Post salvo com sucesso!',
-          backgroundColor: const Color(0xFF10B981),
-          colorText: const Color(0xFFFFFFFF),
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      }
-    } catch (e) {
-      Get.snackbar('Erro', 'Erro ao salvar post: $e');
-    }
-  }
-
   // NOVA: Compartilhar post
   void sharePost(String postId) {
     // TODO: Implementar compartilhamento real
@@ -392,6 +343,130 @@ class HomeController extends GetxController {
   bool isOwnPost(String authorId) {
     final currentUser = FirebaseService.currentUser;
     return currentUser?.uid == authorId;
+  }
+
+  Future<void> toggleSavePost(String postId) async {
+    try {
+      final currentUser = FirebaseService.currentUser;
+      if (currentUser == null) return;
+
+      if (savedPosts.contains(postId)) {
+        // Remover dos salvos
+        savedPosts.remove(postId);
+
+        // TODO: Remover do Firestore
+        await FirebaseService.firestore
+            .collection('users')
+            .doc(currentUser.uid)
+            .collection('savedPosts')
+            .doc(postId)
+            .delete();
+
+        Get.snackbar(
+          'Removido',
+          'Post removido dos salvos',
+          backgroundColor: Colors.amber,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          icon: Icon(Icons.bookmark_remove, color: Colors.white),
+        );
+      } else {
+        // Salvar
+        savedPosts.add(postId);
+
+        // TODO: Salvar no Firestore
+        await FirebaseService.firestore
+            .collection('users')
+            .doc(currentUser.uid)
+            .collection('savedPosts')
+            .doc(postId)
+            .set({
+          'postId': postId,
+          'savedAt': FieldValue.serverTimestamp(),
+        });
+
+        Get.snackbar(
+          'Salvo',
+          'Post salvo com sucesso!',
+          backgroundColor: Colors.amber,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          icon: Icon(Icons.bookmark_rounded, color: Colors.white),
+        );
+      }
+    } catch (e) {
+      Get.snackbar('Erro', 'Erro ao salvar post: $e');
+    }
+  }
+
+// NOVA: Carregar posts salvos do Firestore
+  Future<void> loadSavedPosts() async {
+    try {
+      final currentUser = FirebaseService.currentUser;
+      if (currentUser != null) {
+        final snapshot = await FirebaseService.firestore
+            .collection('users')
+            .doc(currentUser.uid)
+            .collection('savedPosts')
+            .get();
+
+        savedPosts.clear();
+        for (var doc in snapshot.docs) {
+          savedPosts.add(doc.data()['postId'] as String);
+        }
+      }
+    } catch (e) {
+      print('Erro ao carregar posts salvos: $e');
+    }
+  }
+
+// NOVA: Obter lista de posts salvos completos
+  Future<List<PostModel>> getSavedPostsData() async {
+    try {
+      final currentUser = FirebaseService.currentUser;
+      if (currentUser == null) return [];
+
+      final savedPostIds = savedPosts.toList();
+      if (savedPostIds.isEmpty) return [];
+
+      List<PostModel> savedPostsData = [];
+
+      // Buscar dados completos de cada post salvo
+      for (String postId in savedPostIds) {
+        final post = await _postRepository.getPostById(postId);
+        if (post != null && post.isActive) {
+          savedPostsData.add(post);
+        }
+      }
+
+      // Ordenar por data de criação (mais recentes primeiro)
+      savedPostsData.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      return savedPostsData;
+    } catch (e) {
+      print('Erro ao buscar dados dos posts salvos: $e');
+      return [];
+    }
+  }
+
+// NOVA: Remover post dos salvos (para usar na tela de posts salvos)
+  Future<void> removeFromSaved(String postId) async {
+    try {
+      final currentUser = FirebaseService.currentUser;
+      if (currentUser == null) return;
+
+      savedPosts.remove(postId);
+
+      await FirebaseService.firestore
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('savedPosts')
+          .doc(postId)
+          .delete();
+
+    } catch (e) {
+      Get.snackbar('Erro', 'Erro ao remover post salvo: $e');
+    }
   }
 
   void clearCache() {

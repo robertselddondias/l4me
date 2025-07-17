@@ -1,3 +1,4 @@
+// lib/app/modules/auth/views/register_view.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -266,6 +267,8 @@ class RegisterView extends GetView<AuthController> {
                 ),
                 onPressed: controller.togglePasswordVisibility,
               ),
+              // NEW: Update the observable passwordText
+              onChanged: (value) => controller.passwordText.value = value,
               validator: (value) {
                 if (value?.isEmpty ?? true) {
                   return 'Senha é obrigatória';
@@ -327,7 +330,8 @@ class RegisterView extends GetView<AuthController> {
 
   Widget _buildPasswordStrengthIndicator() {
     return Obx(() {
-      final password = controller.passwordController.text;
+      // NEW: Use the observable passwordText to calculate strength
+      final password = controller.passwordText.value;
       final strength = _calculatePasswordStrength(password);
 
       return Column(

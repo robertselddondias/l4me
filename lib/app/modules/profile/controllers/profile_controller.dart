@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:look4me/app/core/utils/logout_utils.dart';
 import 'package:look4me/app/data/models/post_model.dart';
 import 'package:look4me/app/data/models/user_model.dart';
 import 'package:look4me/app/data/repositories/post_repository.dart';
@@ -180,7 +181,12 @@ class ProfileController extends GetxController {
               child: const Text('Cancelar'),
             ),
             TextButton(
-              onPressed: () => Get.back(result: true),
+              onPressed: () async {
+                FirebaseService.auth.signOut();
+                await LogoutUtils.clearAllUserData();
+
+                Get.offAllNamed(AppRoutes.LOGIN);
+              },
               child: const Text('Sair'),
             ),
           ],

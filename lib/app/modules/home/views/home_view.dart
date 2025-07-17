@@ -7,6 +7,7 @@ import 'package:look4me/app/modules/home/controllers/home_controller.dart';
 import 'package:look4me/app/modules/home/widgets/category_filter.dart';
 import 'package:look4me/app/modules/home/widgets/home_shimmer_loading.dart';
 import 'package:look4me/app/modules/home/widgets/post_card.dart';
+import 'package:look4me/app/modules/navigation/controllers/navigation_controller.dart';
 import 'package:look4me/app/shared/components/empty_state.dart';
 import 'package:look4me/app/shared/components/loading_widget.dart';
 
@@ -18,84 +19,61 @@ class HomeView extends GetView<HomeController> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: NestedScrollView(
-          headerSliverBuilder: (context, innerBoxIsScrolled) => [
-            _buildModernAppBar(innerBoxIsScrolled),
+        child: Column(
+          children: [
+            // CORRIGIDO: AppBar fixo fora do scroll
+            _buildFixedAppBar(),
+            _buildCategorySection(),
+            Expanded(child: _buildPostsList()),
           ],
-          body: Column(
-            children: [
-              _buildModernCategorySection(),
-              Expanded(child: _buildPostsList()),
-            ],
-          ),
         ),
       ),
     );
   }
 
-  Widget _buildModernAppBar(bool isScrolled) {
-    return SliverAppBar(
-      expandedHeight: 100.h,
-      floating: false,
-      pinned: true,
-      snap: false,
-      elevation: 0,
-      backgroundColor: AppColors.surface,
-      surfaceTintColor: Colors.transparent,
-      // Adicionado para manter sempre visível
-      toolbarHeight: 80.h,
-      flexibleSpace: FlexibleSpaceBar(
-        titlePadding: EdgeInsets.zero,
-        collapseMode: CollapseMode.pin,
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.surface,
-                AppColors.background.withOpacity(0.8),
+  // NOVO: AppBar completamente fixo
+  Widget _buildFixedAppBar() {
+    return Container(
+      height: 80.h,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.surface,
+            AppColors.background.withOpacity(0.8),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          // Pattern moderno e sutil
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _ModernBackgroundPainter(),
+            ),
+          ),
+          // Conteúdo do AppBar
+          Padding(
+            padding: EdgeInsets.fromLTRB(24.w, 16.h, 24.w, 16.h),
+            child: Row(
+              children: [
+                _buildModernLogo(),
+                const Spacer(),
+                _buildNotificationButton(),
+                SizedBox(width: 12.w),
+                _buildRefreshButton(),
               ],
             ),
           ),
-          child: Stack(
-            children: [
-              // Pattern moderno e sutil
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: _ModernBackgroundPainter(),
-                ),
-              ),
-              // Conteúdo sempre visível
-              Positioned.fill(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(24.w, 16.h, 24.w, 16.h),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Row(
-                        children: [
-                          _buildModernLogo(),
-                          const Spacer(),
-                          _buildNotificationButton(),
-                          SizedBox(width: 12.w),
-                          _buildRefreshButton(),
-                        ],
-                      ),
-                      SizedBox(height: 8.h),
-                      AnimatedOpacity(
-                        opacity: isScrolled ? 0.0 : 1.0,
-                        duration: const Duration(milliseconds: 200),
-                        child: _buildWelcomeSection(),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        ],
       ),
     );
   }
@@ -128,13 +106,26 @@ class HomeView extends GetView<HomeController> {
           ),
         ),
         SizedBox(width: 10.w),
-        Text(
-          'Look4Me',
-          style: TextStyles.titleSmall.copyWith(
-            fontWeight: FontWeight.w800,
-            color: AppColors.text,
-            letterSpacing: -0.5,
-          ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Look4Me',
+              style: TextStyles.titleSmall.copyWith(
+                fontWeight: FontWeight.w800,
+                color: AppColors.text,
+                letterSpacing: -0.5,
+              ),
+            ),
+            Text(
+              'Descubra o look perfeito',
+              style: TextStyles.bodySmall.copyWith(
+                color: AppColors.textSecondary,
+                fontSize: 10.sp,
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -240,23 +231,7 @@ class HomeView extends GetView<HomeController> {
     ));
   }
 
-  Widget _buildWelcomeSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Descubra o look perfeito',
-          style: TextStyles.titleMedium.copyWith(
-            fontWeight: FontWeight.w700,
-            color: AppColors.text,
-            letterSpacing: -0.5,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildModernCategorySection() {
+  Widget _buildCategorySection() {
     return Container(
       height: 60.h,
       decoration: BoxDecoration(

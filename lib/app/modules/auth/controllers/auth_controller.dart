@@ -1,3 +1,4 @@
+// lib/app/modules/auth/controllers/auth_controller.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -22,6 +23,9 @@ class AuthController extends GetxController {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController otpController = TextEditingController();
+
+  // NEW: Add an RxString to observe password text changes
+  final RxString passwordText = ''.obs;
 
   final GlobalKey<FormState> loginFormKey = GlobalKey<FormState>();
   final GlobalKey<FormState> registerFormKey = GlobalKey<FormState>();
@@ -265,5 +269,7 @@ class AuthController extends GetxController {
     nameController.clear();
     phoneController.clear();
     otpController.clear();
+    // NEW: Clear the observable passwordText as well
+    passwordText.value = '';
   }
 }

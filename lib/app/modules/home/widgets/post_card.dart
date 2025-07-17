@@ -1,3 +1,4 @@
+// lib/app/modules/home/widgets/post_card.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -5,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:look4me/app/core/constants/app_colors.dart';
 import 'package:look4me/app/core/themes/text_styles.dart';
 import 'package:look4me/app/data/models/post_model.dart';
+import 'package:flutter/gestures.dart'; // Importação adicionada para Text.rich e TapGestureRecognizer
 
 class PostCard extends StatefulWidget {
   final PostModel post;
@@ -49,6 +51,7 @@ class _PostCardState extends State<PostCard>
   late Animation<double> _saveScaleAnimation;
 
   int? _selectedOption;
+  bool _isDescriptionExpanded = false; // NOVO: Estado para a descrição expansível
 
   @override
   void initState() {
@@ -107,6 +110,7 @@ class _PostCardState extends State<PostCard>
     if (widget.hasUserVoted && _selectedOption != null) {
       _selectionAnimationController.value = 1.0;
     }
+    _isDescriptionExpanded = false; // Garante que a descrição comece contraída
   }
 
   @override
@@ -380,26 +384,34 @@ class _PostCardState extends State<PostCard>
               children: [
                 Row(
                   children: [
-                    Text(
-                      widget.post.authorName,
-                      style: TextStyles.titleSmall.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.text,
+                    Flexible( // Mantido Flexible para o nome do autor
+                      child: Text(
+                        widget.post.authorName,
+                        style: TextStyles.titleSmall.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.text,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     SizedBox(width: 8.w),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                      decoration: BoxDecoration(
-                        color: _getOccasionColor(widget.post.occasion).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6.r),
-                      ),
-                      child: Text(
-                        widget.post.occasionDisplayName,
-                        style: TextStyles.labelSmall.copyWith(
-                          color: _getOccasionColor(widget.post.occasion),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 9.sp,
+                    Flexible( // Mantido Flexible para a tag de ocasião
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                        decoration: BoxDecoration(
+                          color: _getOccasionColor(widget.post.occasion).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6.r),
+                        ),
+                        child: Text(
+                          widget.post.occasionDisplayName,
+                          style: TextStyles.labelSmall.copyWith(
+                            color: _getOccasionColor(widget.post.occasion),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 9.sp,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ),
@@ -417,7 +429,9 @@ class _PostCardState extends State<PostCard>
             ),
           ),
           // Follow button or menu
-          if (!widget.isOwnPost) _buildFollowButton() else _buildMenuButton(),
+          Flexible(
+            child: !widget.isOwnPost ? _buildFollowButton() : _buildMenuButton(),
+          ),
         ],
       ),
     );
@@ -437,6 +451,7 @@ class _PostCardState extends State<PostCard>
             borderRadius: BorderRadius.circular(16.r),
             side: widget.isFollowing ? const BorderSide(color: AppColors.border) : BorderSide.none,
           ),
+          minimumSize: Size(80.w, 32.h), // Melhoria: Define um tamanho mínimo para consistência
         ),
         child: Text(
           widget.isFollowing ? 'Seguindo' : 'Seguir',
@@ -464,15 +479,79 @@ class _PostCardState extends State<PostCard>
     );
   }
 
+  // NOVO/MODIFICADO: Widget para exibir a descrição com funcionalidade de "Ver mais/menos"
   Widget _buildDescription() {
+    const int maxLinesToShow = 3; // Número máximo de linhas antes de truncar
+
+    // Cria um TextPainter para verificar se o texto excede o limite de linhas
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: widget.post.description,
+        style: TextStyles.bodyMedium.copyWith(color: AppColors.text, height: 1.4),
+      ),
+      maxLines: maxLinesToShow,
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: MediaQuery.of(context).size.width - (16.w * 2)); // Largura disponível para o texto
+
+    final bool isOverflowing = textPainter.didExceedMaxLines;
+
     return Padding(
       padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 8.h),
-      child: Text(
-        widget.post.description,
-        style: TextStyles.bodyMedium.copyWith(
-          color: AppColors.text,
-          height: 1.4,
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: widget.post.description,
+                  style: TextStyles.bodyMedium.copyWith(
+                    color: AppColors.text,
+                    height: 1.4,
+                  ),
+                ),
+                if (isOverflowing && !_isDescriptionExpanded) // Se houver overflow e não estiver expandido
+                  TextSpan(
+                    text: '... ', // Adiciona reticências antes do "Ver mais"
+                    style: TextStyles.bodyMedium.copyWith(
+                      color: AppColors.text, // Mesma cor do texto principal
+                      height: 1.4,
+                    ),
+                  ),
+                if (isOverflowing && !_isDescriptionExpanded)
+                  TextSpan(
+                    text: 'Ver mais',
+                    style: TextStyles.bodyMedium.copyWith(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () {
+                        setState(() {
+                          _isDescriptionExpanded = true;
+                        });
+                      },
+                  ),
+                if (isOverflowing && _isDescriptionExpanded) // Se estiver expandido, mostra "Ver menos"
+                  TextSpan(
+                    text: ' Ver menos',
+                    style: TextStyles.bodyMedium.copyWith(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () {
+                        setState(() {
+                          _isDescriptionExpanded = false;
+                        });
+                      },
+                  ),
+              ],
+            ),
+            maxLines: _isDescriptionExpanded ? null : maxLinesToShow, // Define maxLines com base no estado de expansão
+            overflow: TextOverflow.fade, // Usa fade para o overflow do Text.rich
+          ),
+        ],
       ),
     );
   }
