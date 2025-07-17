@@ -22,7 +22,7 @@ class MainNavigation extends GetView<NavigationController> {
   Widget _buildBody() {
     switch (controller.currentIndexRx.value) {
       case 0:
-        return const HomeView();
+        return HomeView();
       case 1:
         return const SearchUsersView();
       case 2:
@@ -32,7 +32,7 @@ class MainNavigation extends GetView<NavigationController> {
       case 4:
         return const ProfileView();
       default:
-        return const HomeView();
+        return HomeView();
     }
   }
 

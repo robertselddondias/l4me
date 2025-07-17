@@ -417,8 +417,14 @@ class _PostCardState extends State<PostCard>
               ],
             ),
           ),
-          // Follow button or menu
-          if (!widget.isOwnPost) _buildFollowButton() else _buildMenuButton(),
+          // Action buttons for other users' posts
+          if (!widget.isOwnPost) ...[
+            _buildFollowButton(),
+            SizedBox(width: 8.w), // Add some spacing between buttons
+            _buildMenuButton(),
+          ] else ...[ // Only show menu button for own posts
+            _buildMenuButton(),
+          ],
         ],
       ),
     );
@@ -430,6 +436,7 @@ class _PostCardState extends State<PostCard>
       child: ElevatedButton(
         onPressed: widget.onFollow,
         style: ElevatedButton.styleFrom(
+          minimumSize: Size.zero, // Adicionado para resolver o problema de largura infinita
           backgroundColor: widget.isFollowing ? AppColors.surfaceVariant : AppColors.primary,
           foregroundColor: widget.isFollowing ? AppColors.text : AppColors.onPrimary,
           elevation: 0,

@@ -90,7 +90,7 @@ class AppPages {
     // já garante que o controller estará disponível quando a página for exibida.
     GetPage(
       name: AppRoutes.HOME,
-      page: () => const HomeView(), // Adicionado const
+      page: () => HomeView(), // Adicionado const
       // binding: BindingsBuilder(() { Get.lazyPut<HomeController>(() => HomeController()); }), // Removido ou ajustado
     ),
     GetPage(

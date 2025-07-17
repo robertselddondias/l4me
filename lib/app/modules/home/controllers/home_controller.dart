@@ -1,5 +1,4 @@
 import 'dart:ui';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -7,11 +6,13 @@ import 'package:look4me/app/data/models/post_model.dart';
 import 'package:look4me/app/data/models/vote_model.dart';
 import 'package:look4me/app/data/repositories/post_repository.dart';
 import 'package:look4me/app/data/repositories/vote_repository.dart';
+import 'package:look4me/app/data/repositories/user_repository.dart'; // NEW
 import 'package:look4me/app/data/services/firebase_service.dart';
 
 class HomeController extends GetxController {
   final PostRepository _postRepository = PostRepository();
   final VoteRepository _voteRepository = VoteRepository();
+  final UserRepository _userRepository = UserRepository(); // NEW
 
   final RxList<PostModel> posts = <PostModel>[].obs;
   final RxList<PostModel> filteredPosts = <PostModel>[].obs;
@@ -21,7 +22,6 @@ class HomeController extends GetxController {
   final RxMap<String, VoteModel> userVotes = <String, VoteModel>{}.obs;
   final RxBool hasNotifications = false.obs;
 
-  // NOVOS: Estados para seguir usuários e posts salvos
   final RxSet<String> followingUsers = <String>{}.obs;
   final RxSet<String> savedPosts = <String>{}.obs;
 
@@ -83,14 +83,13 @@ class HomeController extends GetxController {
     }
   }
 
-  // NOVA: Carregar usuários que o usuário atual segue
+  // UPDATED: Carregar usuários que o usuário atual segue do Firestore
   Future<void> loadUserFollowing() async {
     try {
       final currentUser = FirebaseService.currentUser;
       if (currentUser != null) {
-        // TODO: Implementar busca real no Firestore
-        // Por enquanto, usar lista vazia
-        followingUsers.clear();
+        final followingIds = await _userRepository.getUserFollowingIds(currentUser.uid);
+        followingUsers.assignAll(followingIds);
       }
     } catch (e) {
       print('Erro ao carregar seguindo: $e');
@@ -273,7 +272,7 @@ class HomeController extends GetxController {
     }
   }
 
-  // NOVA: Seguir/deixar de seguir usuário
+  // UPDATED: Seguir/deixar de seguir usuário
   Future<void> toggleFollowUser(String userId) async {
     try {
       final currentUser = FirebaseService.currentUser;
@@ -281,9 +280,8 @@ class HomeController extends GetxController {
 
       if (followingUsers.contains(userId)) {
         // Deixar de seguir
+        await _userRepository.unfollowUser(currentUser.uid, userId);
         followingUsers.remove(userId);
-        // TODO: Implementar no Firestore
-
         Get.snackbar(
           'Sucesso',
           'Você deixou de seguir este usuário',
@@ -293,9 +291,8 @@ class HomeController extends GetxController {
         );
       } else {
         // Seguir
+        await _userRepository.followUser(currentUser.uid, userId);
         followingUsers.add(userId);
-        // TODO: Implementar no Firestore
-
         Get.snackbar(
           'Sucesso',
           'Você agora segue este usuário!',
@@ -304,6 +301,8 @@ class HomeController extends GetxController {
           snackPosition: SnackPosition.BOTTOM,
         );
       }
+      // Trigger a UI update for relevant widgets
+      update();
     } catch (e) {
       Get.snackbar('Erro', 'Erro ao seguir usuário: $e');
     }
@@ -329,7 +328,7 @@ class HomeController extends GetxController {
     return userVotes[postId]?.selectedOption;
   }
 
-  // NOVA: Verificar se está seguindo usuário
+  // UPDATED: Verificar se está seguindo usuário
   bool isFollowingUser(String userId) {
     return followingUsers.contains(userId);
   }

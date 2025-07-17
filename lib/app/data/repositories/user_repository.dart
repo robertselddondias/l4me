@@ -150,4 +150,96 @@ class UserRepository {
       throw Exception('Erro ao buscar top usuários: $e');
     }
   }
+
+  /// Adiciona um usuário à lista de 'seguindo' do currentUser
+  /// e incrementa o 'followingCount' do currentUser,
+  /// e adiciona o currentUser à lista de 'seguidores' do targetUser
+  /// e incrementa o 'followersCount' do targetUser.
+  Future<void> followUser(String currentUserId, String targetUserId) async {
+    try {
+      // 1. Adicionar targetUserId à subcoleção 'following' do currentUser
+      await _usersCollection.doc(currentUserId).collection('following').doc(targetUserId).set({
+        'userId': targetUserId,
+        'followedAt': FieldValue.serverTimestamp(),
+      });
+
+      // 2. Adicionar currentUserId à subcoleção 'followers' do targetUser
+      await _usersCollection.doc(targetUserId).collection('followers').doc(currentUserId).set({
+        'userId': currentUserId,
+        'followedAt': FieldValue.serverTimestamp(),
+      });
+
+      // 3. Incrementar 'followingCount' do currentUser
+      await _usersCollection.doc(currentUserId).update({
+        'followingCount': FieldValue.increment(1),
+        'updatedAt': Timestamp.now(),
+      });
+
+      // 4. Incrementar 'followersCount' do targetUser
+      await _usersCollection.doc(targetUserId).update({
+        'followersCount': FieldValue.increment(1),
+        'updatedAt': Timestamp.now(),
+      });
+    } catch (e) {
+      throw Exception('Erro ao seguir usuário: $e');
+    }
+  }
+
+  /// Remove um usuário da lista de 'seguindo' do currentUser
+  /// e decrementa o 'followingCount' do currentUser,
+  /// e remove o currentUser da lista de 'seguidores' do targetUser
+  /// e decrementa o 'followersCount' do targetUser.
+  Future<void> unfollowUser(String currentUserId, String targetUserId) async {
+    try {
+      // 1. Remover targetUserId da subcoleção 'following' do currentUser
+      await _usersCollection.doc(currentUserId).collection('following').doc(targetUserId).delete();
+
+      // 2. Remover currentUserId da subcoleção 'followers' do targetUser
+      await _usersCollection.doc(targetUserId).collection('followers').doc(currentUserId).delete();
+
+      // 3. Decrementar 'followingCount' do currentUser
+      await _usersCollection.doc(currentUserId).update({
+        'followingCount': FieldValue.increment(-1),
+        'updatedAt': Timestamp.now(),
+      });
+
+      // 4. Decrementar 'followersCount' do targetUser
+      await _usersCollection.doc(targetUserId).update({
+        'followersCount': FieldValue.increment(-1),
+        'updatedAt': Timestamp.now(),
+      });
+    } catch (e) {
+      throw Exception('Erro ao deixar de seguir usuário: $e');
+    }
+  }
+
+  /// Verifica se o currentUserId está seguindo o targetUserId.
+  Future<bool> isUserFollowing(String currentUserId, String targetUserId) async {
+    try {
+      final doc = await _usersCollection.doc(currentUserId).collection('following').doc(targetUserId).get();
+      return doc.exists;
+    } catch (e) {
+      throw Exception('Erro ao verificar se está seguindo: $e');
+    }
+  }
+
+  /// Retorna os IDs dos usuários que o userId está seguindo.
+  Future<List<String>> getUserFollowingIds(String userId) async {
+    try {
+      final snapshot = await _usersCollection.doc(userId).collection('following').get();
+      return snapshot.docs.map((doc) => doc.id).toList();
+    } catch (e) {
+      throw Exception('Erro ao obter IDs de quem o usuário segue: $e');
+    }
+  }
+
+  /// Retorna os IDs dos usuários que seguem o userId.
+  Future<List<String>> getUserFollowerIds(String userId) async {
+    try {
+      final snapshot = await _usersCollection.doc(userId).collection('followers').get();
+      return snapshot.docs.map((doc) => doc.id).toList();
+    } catch (e) {
+      throw Exception('Erro ao obter IDs dos seguidores do usuário: $e');
+    }
+  }
 }

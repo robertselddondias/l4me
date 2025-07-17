@@ -5,9 +5,11 @@ import 'package:look4me/app/data/repositories/user_repository.dart';
 import 'package:look4me/app/data/services/firebase_service.dart';
 import 'package:look4me/app/core/constants/app_colors.dart';
 import 'dart:async';
+import 'package:look4me/app/modules/home/controllers/home_controller.dart'; // NEW
 
 class SearchL4MController extends GetxController {
   final UserRepository _userRepository = UserRepository();
+  late final HomeController _homeController; // NEW: To access followingUsers
 
   // Estados reativas
   final RxBool isLoading = false.obs;
@@ -27,6 +29,7 @@ class SearchL4MController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _homeController = Get.find<HomeController>(); // Initialize HomeController
     _initializeData();
   }
 
@@ -228,7 +231,7 @@ class SearchL4MController extends GetxController {
     }
   }
 
-  /// Seguir/deixar de seguir usuário
+  // UPDATED: Seguir/deixar de seguir usuário (using HomeController)
   Future<void> toggleFollowUser(String userId) async {
     try {
       final currentUser = FirebaseService.currentUser;
@@ -237,19 +240,42 @@ class SearchL4MController extends GetxController {
         return;
       }
 
-      final user = _findUserById(userId);
-      if (user == null) {
-        _showError('Erro', 'Usuário não encontrado');
-        return;
+      // Use HomeController's toggleFollowUser to centralize logic
+      await _homeController.toggleFollowUser(userId);
+
+      // Refresh data in search results to reflect follow status immediately
+      // This will ensure the button state updates.
+      final userIndexInResults = searchResults.indexWhere((user) => user.id == userId);
+      if (userIndexInResults != -1) {
+        // Option 1: Re-fetch the user to get updated counts (more reliable)
+        final updatedUser = await _userRepository.getUserById(userId);
+        if (updatedUser != null) {
+          searchResults[userIndexInResults] = updatedUser;
+        }
+        // Option 2: Manually update followersCount locally if you prefer
+        // This is less robust as it won't reflect other changes.
+        // searchResults[userIndexInResults] = searchResults[userIndexInResults].copyWith(
+        //   followersCount: searchResults[userIndexInResults].followersCount + (_homeController.isFollowingUser(userId) ? 1 : -1),
+        // );
       }
 
-      // TODO: Implementar lógica real de seguir/deixar de seguir
-      // Por enquanto, apenas simular
-      _showInfo('Em desenvolvimento', 'Funcionalidade de seguir em breve!');
+      final userIndexInPopular = popularUsers.indexWhere((user) => user.id == userId);
+      if (userIndexInPopular != -1) {
+        final updatedUser = await _userRepository.getUserById(userId);
+        if (updatedUser != null) {
+          popularUsers[userIndexInPopular] = updatedUser;
+        }
+      }
 
+      update(); // Trigger UI update for this controller's observables
     } catch (e) {
       _showError('Erro ao seguir usuário', e.toString());
     }
+  }
+
+  // NEW: Check if user is followed by the current user (delegated to HomeController)
+  bool isFollowingUser(String userId) {
+    return _homeController.isFollowingUser(userId);
   }
 
   /// Atualiza todos os dados
