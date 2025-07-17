@@ -20,6 +20,10 @@ class HomeController extends GetxController {
   final RxMap<String, VoteModel> userVotes = <String, VoteModel>{}.obs;
   final RxBool hasNotifications = false.obs;
 
+  // NOVOS: Estados para seguir usuários e posts salvos
+  final RxSet<String> followingUsers = <String>{}.obs;
+  final RxSet<String> savedPosts = <String>{}.obs;
+
   final List<String> occasions = [
     'Todos',
     'Trabalho',
@@ -41,6 +45,8 @@ class HomeController extends GetxController {
     super.onInit();
     loadPosts();
     loadUserVotes();
+    loadUserFollowing();
+    loadSavedPosts();
   }
 
   Future<void> loadPosts() async {
@@ -76,14 +82,46 @@ class HomeController extends GetxController {
     }
   }
 
+  // NOVA: Carregar usuários que o usuário atual segue
+  Future<void> loadUserFollowing() async {
+    try {
+      final currentUser = FirebaseService.currentUser;
+      if (currentUser != null) {
+        // TODO: Implementar busca real no Firestore
+        // Por enquanto, usar lista vazia
+        followingUsers.clear();
+      }
+    } catch (e) {
+      print('Erro ao carregar seguindo: $e');
+    }
+  }
+
+  // NOVA: Carregar posts salvos
+  Future<void> loadSavedPosts() async {
+    try {
+      final currentUser = FirebaseService.currentUser;
+      if (currentUser != null) {
+        // TODO: Implementar busca real no Firestore
+        // Por enquanto, usar lista vazia
+        savedPosts.clear();
+      }
+    } catch (e) {
+      print('Erro ao carregar posts salvos: $e');
+    }
+  }
+
   Future<void> refreshPostsComplete() async {
     posts.clear();
     filteredPosts.clear();
     userVotes.clear();
+    followingUsers.clear();
+    savedPosts.clear();
 
     await Future.wait([
       loadPosts(),
       loadUserVotes(),
+      loadUserFollowing(),
+      loadSavedPosts(),
     ]);
 
     update();
@@ -93,6 +131,8 @@ class HomeController extends GetxController {
     await Future.wait([
       loadPosts(),
       loadUserVotes(),
+      loadUserFollowing(),
+      loadSavedPosts(),
     ]);
   }
 
@@ -178,7 +218,6 @@ class HomeController extends GetxController {
     }
   }
 
-  // NOVA FUNÇÃO: Remover voto
   Future<void> removeVote(String postId) async {
     try {
       final currentUser = FirebaseService.currentUser;
@@ -247,6 +286,90 @@ class HomeController extends GetxController {
     }
   }
 
+  // NOVA: Seguir/deixar de seguir usuário
+  Future<void> toggleFollowUser(String userId) async {
+    try {
+      final currentUser = FirebaseService.currentUser;
+      if (currentUser == null) return;
+
+      if (followingUsers.contains(userId)) {
+        // Deixar de seguir
+        followingUsers.remove(userId);
+        // TODO: Implementar no Firestore
+
+        Get.snackbar(
+          'Sucesso',
+          'Você deixou de seguir este usuário',
+          backgroundColor: const Color(0xFFF59E0B),
+          colorText: const Color(0xFFFFFFFF),
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      } else {
+        // Seguir
+        followingUsers.add(userId);
+        // TODO: Implementar no Firestore
+
+        Get.snackbar(
+          'Sucesso',
+          'Você agora segue este usuário!',
+          backgroundColor: const Color(0xFF10B981),
+          colorText: const Color(0xFFFFFFFF),
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      Get.snackbar('Erro', 'Erro ao seguir usuário: $e');
+    }
+  }
+
+  // NOVA: Salvar/dessalvar post
+  Future<void> toggleSavePost(String postId) async {
+    try {
+      final currentUser = FirebaseService.currentUser;
+      if (currentUser == null) return;
+
+      if (savedPosts.contains(postId)) {
+        // Remover dos salvos
+        savedPosts.remove(postId);
+        // TODO: Implementar no Firestore
+
+        Get.snackbar(
+          'Removido',
+          'Post removido dos salvos',
+          backgroundColor: const Color(0xFFF59E0B),
+          colorText: const Color(0xFFFFFFFF),
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      } else {
+        // Salvar
+        savedPosts.add(postId);
+        // TODO: Implementar no Firestore
+
+        Get.snackbar(
+          'Salvo',
+          'Post salvo com sucesso!',
+          backgroundColor: const Color(0xFF10B981),
+          colorText: const Color(0xFFFFFFFF),
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      Get.snackbar('Erro', 'Erro ao salvar post: $e');
+    }
+  }
+
+  // NOVA: Compartilhar post
+  void sharePost(String postId) {
+    // TODO: Implementar compartilhamento real
+    Get.snackbar(
+      'Compartilhar',
+      'Link copiado para a área de transferência!',
+      backgroundColor: const Color(0xFF3B82F6),
+      colorText: const Color(0xFFFFFFFF),
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
   bool hasUserVoted(String postId) {
     return userVotes.containsKey(postId);
   }
@@ -255,10 +378,28 @@ class HomeController extends GetxController {
     return userVotes[postId]?.selectedOption;
   }
 
+  // NOVA: Verificar se está seguindo usuário
+  bool isFollowingUser(String userId) {
+    return followingUsers.contains(userId);
+  }
+
+  // NOVA: Verificar se post está salvo
+  bool isPostSaved(String postId) {
+    return savedPosts.contains(postId);
+  }
+
+  // NOVA: Verificar se é próprio post
+  bool isOwnPost(String authorId) {
+    final currentUser = FirebaseService.currentUser;
+    return currentUser?.uid == authorId;
+  }
+
   void clearCache() {
     posts.clear();
     filteredPosts.clear();
     userVotes.clear();
+    followingUsers.clear();
+    savedPosts.clear();
     update();
   }
 }

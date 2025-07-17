@@ -36,14 +36,17 @@ class HomeView extends GetView<HomeController> {
   Widget _buildModernAppBar(bool isScrolled) {
     return SliverAppBar(
       expandedHeight: 100.h,
-      floating: true,
+      floating: false,
       pinned: true,
       snap: false,
       elevation: 0,
       backgroundColor: AppColors.surface,
       surfaceTintColor: Colors.transparent,
+      // Adicionado para manter sempre visível
+      toolbarHeight: 80.h,
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: EdgeInsets.zero,
+        collapseMode: CollapseMode.pin,
         background: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -63,10 +66,10 @@ class HomeView extends GetView<HomeController> {
                   painter: _ModernBackgroundPainter(),
                 ),
               ),
-              // Conteúdo
+              // Conteúdo sempre visível
               Positioned.fill(
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(24.w, 12.h, 24.w, 16.h),
+                  padding: EdgeInsets.fromLTRB(24.w, 16.h, 24.w, 16.h),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -80,8 +83,12 @@ class HomeView extends GetView<HomeController> {
                           _buildRefreshButton(),
                         ],
                       ),
-                      SizedBox(height: 12.h),
-                      _buildWelcomeSection(),
+                      SizedBox(height: 8.h),
+                      AnimatedOpacity(
+                        opacity: isScrolled ? 0.0 : 1.0,
+                        duration: const Duration(milliseconds: 200),
+                        child: _buildWelcomeSection(),
+                      ),
                     ],
                   ),
                 ),
@@ -340,43 +347,19 @@ class HomeView extends GetView<HomeController> {
               post: post,
               hasUserVoted: controller.hasUserVoted(post.id),
               userVote: controller.getUserVote(post.id),
+              isFollowing: controller.isFollowingUser(post.authorId),
+              isOwnPost: controller.isOwnPost(post.authorId),
+              isSaved: controller.isPostSaved(post.id),
               onVote: (option) => controller.voteOnPost(post.id, option),
-              onRemoveVote: () => controller.removeVote(post.id), // NOVA FUNCIONALIDADE
-              onSave: () => _handleSavePost(post),
-              onShare: () => _handleSharePost(post),
+              onRemoveVote: () => controller.removeVote(post.id),
+              onSave: () => controller.toggleSavePost(post.id),
+              onShare: () => controller.sharePost(post.id),
+              onFollow: () => controller.toggleFollowUser(post.authorId),
             );
           },
         ),
       );
     });
-  }
-
-  void _handleSavePost(post) {
-    Get.snackbar(
-      'Post Salvo',
-      'Look adicionado aos seus favoritos!',
-      backgroundColor: AppColors.success,
-      colorText: Colors.white,
-      icon: Icon(Icons.bookmark_rounded, color: Colors.white),
-      duration: const Duration(seconds: 2),
-      snackPosition: SnackPosition.BOTTOM,
-      margin: EdgeInsets.all(16.w),
-      borderRadius: 12.r,
-    );
-  }
-
-  void _handleSharePost(post) {
-    Get.snackbar(
-      'Compartilhar',
-      'Link copiado para a área de transferência!',
-      backgroundColor: AppColors.info,
-      colorText: Colors.white,
-      icon: Icon(Icons.share_rounded, color: Colors.white),
-      duration: const Duration(seconds: 2),
-      snackPosition: SnackPosition.BOTTOM,
-      margin: EdgeInsets.all(16.w),
-      borderRadius: 12.r,
-    );
   }
 }
 
