@@ -182,4 +182,27 @@ class PostRepository {
       throw Exception('Erro ao buscar posts em alta: $e');
     }
   }
+
+  Future<void> decrementVote(String postId, int option) async {
+    try {
+      final batch = FirebaseFirestore.instance.batch();
+      final postRef = _postsCollection.doc(postId);
+
+      if (option == 1) {
+        batch.update(postRef, {
+          'option1Votes': FieldValue.increment(-1),
+          'totalVotes': FieldValue.increment(-1),
+        });
+      } else if (option == 2) {
+        batch.update(postRef, {
+          'option2Votes': FieldValue.increment(-1),
+          'totalVotes': FieldValue.increment(-1),
+        });
+      }
+
+      await batch.commit();
+    } catch (e) {
+      throw Exception('Erro ao decrementar voto: $e');
+    }
+  }
 }

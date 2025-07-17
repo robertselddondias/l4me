@@ -1,3 +1,6 @@
+import 'dart:ui';
+
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:look4me/app/data/models/post_model.dart';
 import 'package:look4me/app/data/models/vote_model.dart';
@@ -44,7 +47,6 @@ class HomeController extends GetxController {
     try {
       isLoading.value = true;
 
-      // CORREÇÃO: Limpar completamente as listas antes de carregar
       posts.clear();
       filteredPosts.clear();
 
@@ -62,7 +64,6 @@ class HomeController extends GetxController {
     try {
       final currentUser = FirebaseService.currentUser;
       if (currentUser != null) {
-        // CORREÇÃO: Limpar votos existentes
         userVotes.clear();
 
         final votes = await _voteRepository.getUserVotes(currentUser.uid);
@@ -75,20 +76,16 @@ class HomeController extends GetxController {
     }
   }
 
-  // NOVO: Método para refresh completo (usado quando volta do CreatePost)
   Future<void> refreshPostsComplete() async {
-    // Força limpeza completa do estado
     posts.clear();
     filteredPosts.clear();
     userVotes.clear();
 
-    // Recarrega tudo do zero
     await Future.wait([
       loadPosts(),
       loadUserVotes(),
     ]);
 
-    // Força update da UI
     update();
   }
 
@@ -148,10 +145,11 @@ class HomeController extends GetxController {
         createdAt: DateTime.now(),
       );
 
-      await _voteRepository.createVote(vote);
+      final voteId = await _voteRepository.createVote(vote);
       await _postRepository.incrementVote(postId, selectedOption);
 
-      userVotes[postId] = vote;
+      // Atualizar voto local com ID do Firestore
+      userVotes[postId] = vote.copyWith(id: voteId);
 
       final postIndex = posts.indexWhere((p) => p.id == postId);
       if (postIndex != -1) {
@@ -168,9 +166,84 @@ class HomeController extends GetxController {
         _filterPosts();
       }
 
-      Get.snackbar('Sucesso', 'Voto registrado!');
+      Get.snackbar(
+        'Sucesso',
+        'Voto registrado!',
+        backgroundColor: const Color(0xFF10B981),
+        colorText: const Color(0xFFFFFFFF),
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } catch (e) {
       Get.snackbar('Erro', 'Erro ao votar: $e');
+    }
+  }
+
+  // NOVA FUNÇÃO: Remover voto
+  Future<void> removeVote(String postId) async {
+    try {
+      final currentUser = FirebaseService.currentUser;
+      if (currentUser == null) return;
+
+      final existingVote = userVotes[postId];
+      if (existingVote == null) {
+        Get.snackbar('Aviso', 'Você não votou neste post');
+        return;
+      }
+
+      // Confirmar remoção
+      final confirm = await Get.dialog<bool>(
+        AlertDialog(
+          title: const Text('Remover Voto'),
+          content: const Text('Tem certeza que deseja remover seu voto?'),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(result: false),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Get.back(result: true),
+              child: const Text('Remover'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm != true) return;
+
+      // Remover voto do Firestore
+      await _voteRepository.deleteVote(existingVote.id);
+
+      // Decrementar contador no post
+      await _postRepository.decrementVote(postId, existingVote.selectedOption);
+
+      // Remover voto local
+      userVotes.remove(postId);
+
+      // Atualizar post local
+      final postIndex = posts.indexWhere((p) => p.id == postId);
+      if (postIndex != -1) {
+        final updatedPost = posts[postIndex].copyWith(
+          option1Votes: existingVote.selectedOption == 1
+              ? posts[postIndex].option1Votes - 1
+              : posts[postIndex].option1Votes,
+          option2Votes: existingVote.selectedOption == 2
+              ? posts[postIndex].option2Votes - 1
+              : posts[postIndex].option2Votes,
+          totalVotes: posts[postIndex].totalVotes - 1,
+        );
+        posts[postIndex] = updatedPost;
+        _filterPosts();
+      }
+
+      Get.snackbar(
+        'Sucesso',
+        'Voto removido!',
+        backgroundColor: const Color(0xFFF59E0B),
+        colorText: const Color(0xFFFFFFFF),
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      Get.snackbar('Erro', 'Erro ao remover voto: $e');
     }
   }
 
@@ -182,7 +255,6 @@ class HomeController extends GetxController {
     return userVotes[postId]?.selectedOption;
   }
 
-  // NOVO: Método para limpar cache quando necessário
   void clearCache() {
     posts.clear();
     filteredPosts.clear();

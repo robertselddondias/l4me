@@ -155,7 +155,6 @@ class HomeView extends GetView<HomeController> {
         children: [
           IconButton(
             onPressed: () {
-              // TODO: Implementar notificações
               Get.snackbar(
                 'Notificações',
                 'Nenhuma notificação nova!',
@@ -172,7 +171,6 @@ class HomeView extends GetView<HomeController> {
             ),
             padding: EdgeInsets.zero,
           ),
-          // Badge de notificação
           if (controller.hasNotifications.value)
             Positioned(
               top: 6.h,
@@ -343,6 +341,7 @@ class HomeView extends GetView<HomeController> {
               hasUserVoted: controller.hasUserVoted(post.id),
               userVote: controller.getUserVote(post.id),
               onVote: (option) => controller.voteOnPost(post.id, option),
+              onRemoveVote: () => controller.removeVote(post.id), // NOVA FUNCIONALIDADE
               onSave: () => _handleSavePost(post),
               onShare: () => _handleSharePost(post),
             );
