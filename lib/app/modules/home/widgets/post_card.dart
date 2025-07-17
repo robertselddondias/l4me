@@ -1,4 +1,3 @@
-// lib/app/modules/home/widgets/post_card.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -6,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:look4me/app/core/constants/app_colors.dart';
 import 'package:look4me/app/core/themes/text_styles.dart';
 import 'package:look4me/app/data/models/post_model.dart';
-import 'package:flutter/gestures.dart'; // Importação adicionada para Text.rich e TapGestureRecognizer
 
 class PostCard extends StatefulWidget {
   final PostModel post;
@@ -51,7 +49,6 @@ class _PostCardState extends State<PostCard>
   late Animation<double> _saveScaleAnimation;
 
   int? _selectedOption;
-  bool _isDescriptionExpanded = false; // NOVO: Estado para a descrição expansível
 
   @override
   void initState() {
@@ -110,7 +107,6 @@ class _PostCardState extends State<PostCard>
     if (widget.hasUserVoted && _selectedOption != null) {
       _selectionAnimationController.value = 1.0;
     }
-    _isDescriptionExpanded = false; // Garante que a descrição comece contraída
   }
 
   @override
@@ -318,7 +314,7 @@ class _PostCardState extends State<PostCard>
       margin: EdgeInsets.only(bottom: 24.h),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(0), // Removido border radius para ficar mais como Instagram
         boxShadow: [
           BoxShadow(
             color: AppColors.shadow.withOpacity(0.04),
@@ -333,11 +329,12 @@ class _PostCardState extends State<PostCard>
         children: [
           _buildHeader(),
           _buildImagesSection(),
-          _buildActionBar(),
-          _buildVoteInfo(),
+          _buildActionBar(), // Agora inclui votos e ações na mesma linha
+          // REMOVIDO: _buildVoteInfo() não é mais necessário
+          // MOVIDO: Descrição agora vem depois das ações, como no Instagram
           if (widget.post.description.isNotEmpty) _buildDescription(),
           if (widget.post.tags.isNotEmpty) _buildTags(),
-          _buildTimeStamp(),
+          // REMOVIDO: _buildTimeStamp() não é mais necessário
         ],
       ),
     );
@@ -384,34 +381,26 @@ class _PostCardState extends State<PostCard>
               children: [
                 Row(
                   children: [
-                    Flexible( // Mantido Flexible para o nome do autor
-                      child: Text(
-                        widget.post.authorName,
-                        style: TextStyles.titleSmall.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.text,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    Text(
+                      widget.post.authorName,
+                      style: TextStyles.titleSmall.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.text,
                       ),
                     ),
                     SizedBox(width: 8.w),
-                    Flexible( // Mantido Flexible para a tag de ocasião
-                      child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                        decoration: BoxDecoration(
-                          color: _getOccasionColor(widget.post.occasion).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6.r),
-                        ),
-                        child: Text(
-                          widget.post.occasionDisplayName,
-                          style: TextStyles.labelSmall.copyWith(
-                            color: _getOccasionColor(widget.post.occasion),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 9.sp,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                      decoration: BoxDecoration(
+                        color: _getOccasionColor(widget.post.occasion).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6.r),
+                      ),
+                      child: Text(
+                        widget.post.occasionDisplayName,
+                        style: TextStyles.labelSmall.copyWith(
+                          color: _getOccasionColor(widget.post.occasion),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 9.sp,
                         ),
                       ),
                     ),
@@ -419,7 +408,7 @@ class _PostCardState extends State<PostCard>
                 ),
                 SizedBox(height: 2.h),
                 Text(
-                  widget.post.occasionDisplayName,
+                  _getTimeAgoDetailed(widget.post.createdAt),
                   style: TextStyles.bodySmall.copyWith(
                     color: AppColors.textTertiary,
                     fontSize: 11.sp,
@@ -429,9 +418,7 @@ class _PostCardState extends State<PostCard>
             ),
           ),
           // Follow button or menu
-          Flexible(
-            child: !widget.isOwnPost ? _buildFollowButton() : _buildMenuButton(),
-          ),
+          if (!widget.isOwnPost) _buildFollowButton() else _buildMenuButton(),
         ],
       ),
     );
@@ -451,7 +438,6 @@ class _PostCardState extends State<PostCard>
             borderRadius: BorderRadius.circular(16.r),
             side: widget.isFollowing ? const BorderSide(color: AppColors.border) : BorderSide.none,
           ),
-          minimumSize: Size(80.w, 32.h), // Melhoria: Define um tamanho mínimo para consistência
         ),
         child: Text(
           widget.isFollowing ? 'Seguindo' : 'Seguir',
@@ -464,92 +450,110 @@ class _PostCardState extends State<PostCard>
   }
 
   Widget _buildMenuButton() {
-    return Container(
-      width: 32.w,
-      height: 32.h,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(16.r),
-      ),
-      child: Icon(
-        Icons.more_horiz_rounded,
-        color: AppColors.textSecondary,
-        size: 18.sp,
+    return PopupMenuButton<String>(
+      onSelected: (value) {
+        switch (value) {
+          case 'remove_vote':
+            widget.onRemoveVote?.call();
+            break;
+          case 'report':
+            _showReportDialog();
+            break;
+        }
+      },
+      itemBuilder: (context) {
+        List<PopupMenuEntry<String>> items = [];
+
+        // Opção de remover voto (só aparece se o usuário votou)
+        if (widget.hasUserVoted && widget.onRemoveVote != null) {
+          items.add(
+            const PopupMenuItem(
+              value: 'remove_vote',
+              child: Row(
+                children: [
+                  Icon(Icons.remove_circle_outline, color: AppColors.warning),
+                  SizedBox(width: 12),
+                  Text('Remover meu voto'),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Opção de reportar (sempre disponível para posts de outros usuários)
+        if (!widget.isOwnPost) {
+          items.add(
+            const PopupMenuItem(
+              value: 'report',
+              child: Row(
+                children: [
+                  Icon(Icons.report_outlined, color: AppColors.error),
+                  SizedBox(width: 12),
+                  Text('Reportar post'),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Se não há opções disponíveis, mostrar uma opção disabled
+        if (items.isEmpty) {
+          items.add(
+            const PopupMenuItem(
+              enabled: false,
+              value: 'no_options',
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: AppColors.textTertiary),
+                  SizedBox(width: 12),
+                  Text('Nenhuma ação disponível',
+                      style: TextStyle(color: AppColors.textTertiary)),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return items;
+      },
+      child: Container(
+        width: 32.w,
+        height: 32.h,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        child: Icon(
+          Icons.more_horiz_rounded,
+          color: AppColors.textSecondary,
+          size: 18.sp,
+        ),
       ),
     );
   }
 
-  // NOVO/MODIFICADO: Widget para exibir a descrição com funcionalidade de "Ver mais/menos"
-  Widget _buildDescription() {
-    const int maxLinesToShow = 3; // Número máximo de linhas antes de truncar
-
-    // Cria um TextPainter para verificar se o texto excede o limite de linhas
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: widget.post.description,
-        style: TextStyles.bodyMedium.copyWith(color: AppColors.text, height: 1.4),
-      ),
-      maxLines: maxLinesToShow,
-      textDirection: TextDirection.ltr,
-    )..layout(maxWidth: MediaQuery.of(context).size.width - (16.w * 2)); // Largura disponível para o texto
-
-    final bool isOverflowing = textPainter.didExceedMaxLines;
-
-    return Padding(
-      padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 8.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text: widget.post.description,
-                  style: TextStyles.bodyMedium.copyWith(
-                    color: AppColors.text,
-                    height: 1.4,
-                  ),
-                ),
-                if (isOverflowing && !_isDescriptionExpanded) // Se houver overflow e não estiver expandido
-                  TextSpan(
-                    text: '... ', // Adiciona reticências antes do "Ver mais"
-                    style: TextStyles.bodyMedium.copyWith(
-                      color: AppColors.text, // Mesma cor do texto principal
-                      height: 1.4,
-                    ),
-                  ),
-                if (isOverflowing && !_isDescriptionExpanded)
-                  TextSpan(
-                    text: 'Ver mais',
-                    style: TextStyles.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    recognizer: TapGestureRecognizer()
-                      ..onTap = () {
-                        setState(() {
-                          _isDescriptionExpanded = true;
-                        });
-                      },
-                  ),
-                if (isOverflowing && _isDescriptionExpanded) // Se estiver expandido, mostra "Ver menos"
-                  TextSpan(
-                    text: ' Ver menos',
-                    style: TextStyles.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    recognizer: TapGestureRecognizer()
-                      ..onTap = () {
-                        setState(() {
-                          _isDescriptionExpanded = false;
-                        });
-                      },
-                  ),
-              ],
-            ),
-            maxLines: _isDescriptionExpanded ? null : maxLinesToShow, // Define maxLines com base no estado de expansão
-            overflow: TextOverflow.fade, // Usa fade para o overflow do Text.rich
+  void _showReportDialog() {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Reportar Post'),
+        content: const Text('Tem certeza que deseja reportar este post por conteúdo inadequado?'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Get.back();
+              Get.snackbar(
+                'Reportado',
+                'Post reportado com sucesso. Nossa equipe irá analisar.',
+                backgroundColor: AppColors.warning,
+                colorText: Colors.white,
+                snackPosition: SnackPosition.BOTTOM,
+              );
+            },
+            child: const Text('Reportar', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -764,26 +768,7 @@ class _PostCardState extends State<PostCard>
             ),
           ),
 
-        // Label da opção
-        Positioned(
-          top: 12.h,
-          left: 12.w,
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.6),
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-            child: Text(
-              'Opção $option',
-              style: TextStyles.labelSmall.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 10.sp,
-              ),
-            ),
-          ),
-        ),
+        // REMOVIDO: Label "Opção X" não aparece mais
 
         // Indicador de seleção
         if (widget.hasUserVoted && isSelected) _buildSelectionIndicator(),
@@ -814,7 +799,7 @@ class _PostCardState extends State<PostCard>
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       child: Row(
         children: [
-          // Vote status
+          // Vote status com número de votos na mesma linha
           if (widget.hasUserVoted) ...[
             Icon(
               Icons.how_to_vote_rounded,
@@ -826,6 +811,14 @@ class _PostCardState extends State<PostCard>
               'Votou',
               style: TextStyles.bodyMedium.copyWith(
                 color: AppColors.success,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(width: 8.w),
+            Text(
+              '• ${widget.post.totalVotes} votos',
+              style: TextStyles.bodyMedium.copyWith(
+                color: AppColors.text,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -842,6 +835,13 @@ class _PostCardState extends State<PostCard>
                 color: AppColors.textSecondary,
               ),
             ),
+            SizedBox(width: 8.w),
+            Text(
+              '• ${widget.post.totalVotes} votos',
+              style: TextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
           ],
           const Spacer(),
           // Action buttons
@@ -849,6 +849,7 @@ class _PostCardState extends State<PostCard>
             icon: Icons.bookmark_border_rounded,
             activeIcon: Icons.bookmark_rounded,
             isActive: widget.isSaved,
+            activeColor: Colors.amber, // Cor amarela para posts salvos
             onTap: _handleSave,
           ),
           SizedBox(width: 16.w),
@@ -865,6 +866,7 @@ class _PostCardState extends State<PostCard>
     required IconData icon,
     IconData? activeIcon,
     bool isActive = false,
+    Color? activeColor,
     required VoidCallback? onTap,
   }) {
     return GestureDetector(
@@ -877,7 +879,9 @@ class _PostCardState extends State<PostCard>
             child: Icon(
               isActive && activeIcon != null ? activeIcon : icon,
               size: 24.sp,
-              color: isActive ? AppColors.primary : AppColors.textSecondary,
+              color: isActive
+                  ? (activeColor ?? AppColors.primary)
+                  : AppColors.textSecondary,
             ),
           );
         },
@@ -885,14 +889,17 @@ class _PostCardState extends State<PostCard>
     );
   }
 
-  Widget _buildVoteInfo() {
+  // REMOVIDO: _buildVoteInfo() não é mais necessário - movido para _buildActionBar()
+
+  // CORRIGIDO: Descrição simples sem nome do usuário
+  Widget _buildDescription() {
     return Padding(
       padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 8.h),
       child: Text(
-        '${widget.post.totalVotes} votos',
+        widget.post.description,
         style: TextStyles.bodyMedium.copyWith(
           color: AppColors.text,
-          fontWeight: FontWeight.w600,
+          height: 1.4,
         ),
       ),
     );
@@ -900,7 +907,7 @@ class _PostCardState extends State<PostCard>
 
   Widget _buildTags() {
     return Padding(
-      padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 0),
+      padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h), // Aumentado padding bottom já que não há mais timestamp
       child: Wrap(
         spacing: 6.w,
         runSpacing: 4.h,
@@ -917,18 +924,7 @@ class _PostCardState extends State<PostCard>
     );
   }
 
-  Widget _buildTimeStamp() {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 16.w),
-      child: Text(
-        _getTimeAgo(widget.post.createdAt),
-        style: TextStyles.bodySmall.copyWith(
-          color: AppColors.textTertiary,
-          fontSize: 10.sp,
-        ),
-      ),
-    );
-  }
+  // REMOVIDO: _buildTimeStamp() não é mais necessário
 
   Color _getOccasionColor(PostOccasion occasion) {
     switch (occasion) {
@@ -959,18 +955,19 @@ class _PostCardState extends State<PostCard>
     }
   }
 
-  String _getTimeAgo(DateTime dateTime) {
+  // NOVO: Função para tempo mais detalhado no header
+  String _getTimeAgoDetailed(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
 
     if (difference.inDays > 0) {
-      return '${difference.inDays}d';
+      return 'Há ${difference.inDays} ${difference.inDays == 1 ? 'dia' : 'dias'}';
     } else if (difference.inHours > 0) {
-      return '${difference.inHours}h';
+      return 'Há ${difference.inHours} ${difference.inHours == 1 ? 'hora' : 'horas'}';
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m';
+      return 'Há ${difference.inMinutes} ${difference.inMinutes == 1 ? 'minuto' : 'minutos'}';
     } else {
-      return 'agora';
+      return 'Agora mesmo';
     }
   }
 }
