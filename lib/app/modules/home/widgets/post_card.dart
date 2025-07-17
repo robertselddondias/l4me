@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:get/get.dart';
 import 'package:look4me/app/core/constants/app_colors.dart';
 import 'package:look4me/app/core/themes/text_styles.dart';
 import 'package:look4me/app/data/models/post_model.dart';
@@ -10,14 +11,18 @@ class PostCard extends StatefulWidget {
   final bool hasUserVoted;
   final int? userVote;
   final Function(int) onVote;
+  final VoidCallback? onSave;
+  final VoidCallback? onShare;
 
   const PostCard({
-    super.key,
+    Key? key,
     required this.post,
     required this.hasUserVoted,
     this.userVote,
     required this.onVote,
-  });
+    this.onSave,
+    this.onShare,
+  }) : super(key: key);
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -88,10 +93,22 @@ class _PostCardState extends State<PostCard>
       curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
     ));
 
-    _showResults = widget.hasUserVoted;
-    _selectedOption = widget.userVote;
+    // CORREÇÃO: Garantir estado inicial limpo
+    _initializeState();
+  }
 
-    if (widget.hasUserVoted) {
+  void _initializeState() {
+    // Reset completo dos estados
+    _showResults = widget.hasUserVoted;
+    _selectedOption = widget.hasUserVoted ? widget.userVote : null;
+
+    // Reset das animações
+    _heartAnimationController.reset();
+    _slideAnimationController.reset();
+    _resultsAnimationController.reset();
+
+    // Se já votou, setar animações para o final
+    if (widget.hasUserVoted && _selectedOption != null) {
       _slideAnimationController.value = 1.0;
       _resultsAnimationController.value = 1.0;
     }
@@ -100,8 +117,32 @@ class _PostCardState extends State<PostCard>
   @override
   void didUpdateWidget(PostCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!oldWidget.hasUserVoted && widget.hasUserVoted) {
-      _handleVoteSuccess();
+
+    // CORREÇÃO: Verificar mudanças completas no widget
+    bool needsStateUpdate = false;
+
+    // Verificar se o status de votação mudou
+    if (oldWidget.hasUserVoted != widget.hasUserVoted) {
+      needsStateUpdate = true;
+    }
+
+    // Verificar se o voto do usuário mudou
+    if (oldWidget.userVote != widget.userVote) {
+      needsStateUpdate = true;
+    }
+
+    // Verificar se é um post diferente
+    if (oldWidget.post.id != widget.post.id) {
+      needsStateUpdate = true;
+    }
+
+    if (needsStateUpdate) {
+      _initializeState();
+
+      // Se acabou de votar, animar
+      if (!oldWidget.hasUserVoted && widget.hasUserVoted) {
+        _handleVoteSuccess();
+      }
     }
   }
 
@@ -232,7 +273,7 @@ class _PostCardState extends State<PostCard>
                     Container(
                       width: 4.w,
                       height: 4.h,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: AppColors.textTertiary,
                         shape: BoxShape.circle,
                       ),
@@ -267,9 +308,7 @@ class _PostCardState extends State<PostCard>
             ),
           ),
           IconButton(
-            onPressed: () {
-              // Menu de opções
-            },
+            onPressed: () => _showOptionsMenu(),
             icon: Icon(
               Icons.more_vert_rounded,
               color: AppColors.textSecondary,
@@ -300,7 +339,7 @@ class _PostCardState extends State<PostCard>
       children: [
         AspectRatio(
           aspectRatio: 0.8, // Mais alto que largo, como Instagram
-          child: SizedBox(
+          child: Container(
             width: double.infinity,
             child: _buildImagesSection(),
           ),
@@ -352,7 +391,7 @@ class _PostCardState extends State<PostCard>
   }
 
   Widget _buildImageOption(int option, String imageUrl) {
-    final isSelected = _selectedOption == option;
+    final isSelected = widget.hasUserVoted && _selectedOption == option;
     final percentage = option == 1
         ? widget.post.option1Percentage
         : widget.post.option2Percentage;
@@ -384,7 +423,7 @@ class _PostCardState extends State<PostCard>
                     SizedBox(
                       width: 24.w,
                       height: 24.h,
-                      child: const CircularProgressIndicator(
+                      child: CircularProgressIndicator(
                         strokeWidth: 2,
                         color: AppColors.primary,
                       ),
@@ -460,14 +499,15 @@ class _PostCardState extends State<PostCard>
               ),
             ),
 
-            // Results overlay
-            if (_showResults) _buildResultsOverlay(option, percentage, votes, isSelected),
+            // Results overlay - CORREÇÃO: só mostrar se realmente votou
+            if (widget.hasUserVoted && _selectedOption != null)
+              _buildResultsOverlay(option, percentage, votes, isSelected),
 
-            // Vote button (when not voted)
+            // Vote button - CORREÇÃO: só mostrar se NÃO votou
             if (!widget.hasUserVoted) _buildVoteButton(option),
 
-            // Selection indicator
-            if (isSelected) _buildSelectionIndicator(),
+            // Selection indicator - CORREÇÃO: só mostrar se selecionado E votou
+            if (widget.hasUserVoted && isSelected) _buildSelectionIndicator(),
           ],
         ),
       ),
@@ -577,7 +617,7 @@ class _PostCardState extends State<PostCard>
             offset: Offset(0, 60.h * _slideAnimation.value),
             child: Opacity(
               opacity: 1 - _slideAnimation.value,
-              child: SizedBox(
+              child: Container(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () => _handleVote(option),
@@ -643,7 +683,8 @@ class _PostCardState extends State<PostCard>
   }
 
   Widget _buildEngagementSection() {
-    if (!_showResults) return const SizedBox.shrink();
+    // CORREÇÃO: só mostrar se realmente votou
+    if (!widget.hasUserVoted || _selectedOption == null) return const SizedBox.shrink();
 
     return AnimatedBuilder(
       animation: _resultsAnimationController,
@@ -709,7 +750,7 @@ class _PostCardState extends State<PostCard>
             widget.post.option1Votes,
             widget.post.option1Percentage,
             isOption1Winner,
-            _selectedOption == 1,
+            widget.hasUserVoted && _selectedOption == 1, // CORREÇÃO: verificar se realmente votou
           ),
         ),
         Container(
@@ -724,7 +765,7 @@ class _PostCardState extends State<PostCard>
             widget.post.option2Votes,
             widget.post.option2Percentage,
             !isOption1Winner,
-            _selectedOption == 2,
+            widget.hasUserVoted && _selectedOption == 2, // CORREÇÃO: verificar se realmente votou
           ),
         ),
       ],
@@ -785,59 +826,249 @@ class _PostCardState extends State<PostCard>
   }
 
   Widget _buildFooter() {
-    return Padding(
+    return Container(
       padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 16.h),
-      child: Row(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border(
+          top: BorderSide(
+            color: AppColors.border.withOpacity(0.1),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Column(
         children: [
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(20.r),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.how_to_vote_outlined,
-                  size: 14.sp,
-                  color: AppColors.primary,
-                ),
-                SizedBox(width: 4.w),
-                Text(
-                  '${widget.post.totalVotes}',
-                  style: TextStyles.labelSmall.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w700,
+          // Action buttons row
+          Row(
+            children: [
+              _buildActionButton(
+                icon: Icons.bookmark_outline_rounded,
+                activeIcon: Icons.bookmark_rounded,
+                label: 'Salvar',
+                onTap: widget.onSave,
+                isActive: false, // TODO: Implementar estado de salvamento
+              ),
+              SizedBox(width: 24.w),
+              _buildActionButton(
+                icon: Icons.share_outlined,
+                activeIcon: Icons.share_rounded,
+                label: 'Compartilhar',
+                onTap: widget.onShare,
+                isActive: false,
+              ),
+              const Spacer(),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary.withOpacity(0.1),
+                      AppColors.secondary.withOpacity(0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20.r),
+                  border: Border.all(
+                    color: AppColors.primary.withOpacity(0.2),
                   ),
                 ),
-                SizedBox(width: 2.w),
-                Text(
-                  'votos',
-                  style: TextStyles.labelSmall.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w500,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.how_to_vote_outlined,
+                      size: 16.sp,
+                      color: AppColors.primary,
+                    ),
+                    SizedBox(width: 6.w),
+                    Text(
+                      '${widget.post.totalVotes}',
+                      style: TextStyles.labelMedium.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(width: 4.w),
+                    Text(
+                      widget.post.totalVotes == 1 ? 'voto' : 'votos',
+                      style: TextStyles.labelSmall.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          // Tags row
+          if (widget.post.tags.isNotEmpty) ...[
+            SizedBox(height: 12.h),
+            Row(
+              children: [
+                Icon(
+                  Icons.local_offer_outlined,
+                  size: 14.sp,
+                  color: AppColors.textTertiary,
+                ),
+                SizedBox(width: 6.w),
+                Expanded(
+                  child: Wrap(
+                    spacing: 8.w,
+                    children: widget.post.tags.take(3).map((tag) {
+                      return Text(
+                        '#$tag',
+                        style: TextStyles.bodySmall.copyWith(
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ),
               ],
             ),
-          ),
-          const Spacer(),
-          if (widget.post.tags.isNotEmpty)
-            Wrap(
-              spacing: 6.w,
-              children: widget.post.tags.take(3).map((tag) {
-                return Text(
-                  '#$tag',
-                  style: TextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                );
-              }).toList(),
-            ),
+          ],
         ],
       ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+    required VoidCallback? onTap,
+    required bool isActive,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                isActive ? activeIcon : icon,
+                key: ValueKey(isActive),
+                size: 18.sp,
+                color: isActive ? AppColors.primary : AppColors.textSecondary,
+              ),
+            ),
+            SizedBox(width: 6.w),
+            Text(
+              label,
+              style: TextStyles.labelMedium.copyWith(
+                color: isActive ? AppColors.primary : AppColors.textSecondary,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showOptionsMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              width: 40.w,
+              height: 4.h,
+              margin: EdgeInsets.only(top: 12.h, bottom: 20.h),
+              decoration: BoxDecoration(
+                color: AppColors.textTertiary,
+                borderRadius: BorderRadius.circular(2.r),
+              ),
+            ),
+            // Options
+            _buildMenuOption(
+              icon: Icons.bookmark_outline_rounded,
+              title: 'Salvar Post',
+              subtitle: 'Adicionar aos favoritos',
+              onTap: () {
+                Navigator.pop(context);
+                widget.onSave?.call();
+              },
+            ),
+            _buildMenuOption(
+              icon: Icons.share_outlined,
+              title: 'Compartilhar',
+              subtitle: 'Enviar para amigos',
+              onTap: () {
+                Navigator.pop(context);
+                widget.onShare?.call();
+              },
+            ),
+            _buildMenuOption(
+              icon: Icons.report_outlined,
+              title: 'Reportar',
+              subtitle: 'Conteúdo inadequado',
+              onTap: () {
+                Navigator.pop(context);
+              },
+              isDestructive: true,
+            ),
+            SizedBox(height: 20.h),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    bool isDestructive = false,
+  }) {
+    return ListTile(
+      leading: Container(
+        width: 40.w,
+        height: 40.h,
+        decoration: BoxDecoration(
+          color: isDestructive
+              ? AppColors.error.withOpacity(0.1)
+              : AppColors.primary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        child: Icon(
+          icon,
+          color: isDestructive ? AppColors.error : AppColors.primary,
+          size: 20.sp,
+        ),
+      ),
+      title: Text(
+        title,
+        style: TextStyles.titleSmall.copyWith(
+          fontWeight: FontWeight.w600,
+          color: isDestructive ? AppColors.error : AppColors.text,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyles.bodySmall.copyWith(
+          color: AppColors.textSecondary,
+        ),
+      ),
+      onTap: onTap,
     );
   }
 

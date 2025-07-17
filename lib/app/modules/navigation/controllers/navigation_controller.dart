@@ -10,6 +10,7 @@ import 'package:look4me/app/modules/stories/controllers/stories_controller.dart'
 class NavigationController extends GetxController {
   // Variável observável para o índice atual
   final RxInt _currentIndex = 0.obs;
+  int _previousIndex = 0; // NOVO: Para rastrear página anterior
 
   // Getter público para acessar o índice atual
   int get currentIndex => _currentIndex.value;
@@ -45,9 +46,31 @@ class NavigationController extends GetxController {
 
   void changePage(int index) {
     if (index != _currentIndex.value && index >= 0 && index <= 4) {
+      // CORREÇÃO: Salvar página anterior
+      _previousIndex = _currentIndex.value;
+
       // Garantir que o controller da página está registrado antes de navegar
       _ensureControllerForPage(index);
+
+      // CORREÇÃO: Se voltando do CreatePost (index 2) para Home (index 0), refresh completo
+      if (_previousIndex == 2 && index == 0) {
+        _handleReturnFromCreatePost();
+      }
+
       _currentIndex.value = index;
+    }
+  }
+
+  // NOVO: Método para lidar com retorno do CreatePost
+  void _handleReturnFromCreatePost() {
+    try {
+      if (Get.isRegistered<HomeController>()) {
+        final homeController = Get.find<HomeController>();
+        // Usar o método de refresh completo
+        homeController.refreshPostsComplete();
+      }
+    } catch (e) {
+      print('Erro ao atualizar timeline após criar post: $e');
     }
   }
 
@@ -102,12 +125,37 @@ class NavigationController extends GetxController {
     changePage(4);
   }
 
+  // NOVO: Método específico para voltar à Home após criar post
+  void goToHomeAfterCreatePost() {
+    // Força refresh completo da timeline
+    try {
+      if (Get.isRegistered<HomeController>()) {
+        Get.find<HomeController>().clearCache();
+      }
+    } catch (e) {
+      print('Erro ao limpar cache: $e');
+    }
+
+    changePage(0);
+
+    // Aguarda um frame e recarrega
+    Future.delayed(const Duration(milliseconds: 100), () {
+      try {
+        if (Get.isRegistered<HomeController>()) {
+          Get.find<HomeController>().refreshPostsComplete();
+        }
+      } catch (e) {
+        print('Erro ao recarregar posts: $e');
+      }
+    });
+  }
+
   // Métodos com ações adicionais
   void goToHomeAndRefresh() {
     changePage(0);
     try {
       if (Get.isRegistered<HomeController>()) {
-        Get.find<HomeController>().refreshPosts();
+        Get.find<HomeController>().refreshPostsComplete();
       }
     } catch (e) {
       print('Erro ao atualizar Home: $e');
@@ -188,4 +236,8 @@ class NavigationController extends GetxController {
     }
   }
 
+  @override
+  void onClose() {
+    super.onClose();
+  }
 }

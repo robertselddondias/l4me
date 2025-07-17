@@ -194,8 +194,8 @@ class CreatePostController extends GetxController {
         colorText: Colors.white,
       );
 
-      // Navegar para a aba Home
-      Get.find<NavigationController>().goToHome();
+      // CORREÇÃO: Usar o método que força refresh completo da timeline
+      Get.find<NavigationController>().goToHomeAfterCreatePost();
 
     } catch (e) {
       Get.snackbar('Erro', 'Erro ao criar post: $e');

@@ -42,6 +42,11 @@ class HomeController extends GetxController {
   Future<void> loadPosts() async {
     try {
       isLoading.value = true;
+
+      // CORREÇÃO: Limpar completamente as listas antes de carregar
+      posts.clear();
+      filteredPosts.clear();
+
       final fetchedPosts = await _postRepository.getAllPosts();
       posts.assignAll(fetchedPosts);
       _filterPosts();
@@ -56,6 +61,9 @@ class HomeController extends GetxController {
     try {
       final currentUser = FirebaseService.currentUser;
       if (currentUser != null) {
+        // CORREÇÃO: Limpar votos existentes
+        userVotes.clear();
+
         final votes = await _voteRepository.getUserVotes(currentUser.uid);
         for (var vote in votes) {
           userVotes[vote.postId] = vote;
@@ -66,9 +74,28 @@ class HomeController extends GetxController {
     }
   }
 
+  // NOVO: Método para refresh completo (usado quando volta do CreatePost)
+  Future<void> refreshPostsComplete() async {
+    // Força limpeza completa do estado
+    posts.clear();
+    filteredPosts.clear();
+    userVotes.clear();
+
+    // Recarrega tudo do zero
+    await Future.wait([
+      loadPosts(),
+      loadUserVotes(),
+    ]);
+
+    // Força update da UI
+    update();
+  }
+
   Future<void> refreshPosts() async {
-    await loadPosts();
-    await loadUserVotes();
+    await Future.wait([
+      loadPosts(),
+      loadUserVotes(),
+    ]);
   }
 
   Future<void> loadMorePosts() async {
@@ -152,5 +179,13 @@ class HomeController extends GetxController {
 
   int? getUserVote(String postId) {
     return userVotes[postId]?.selectedOption;
+  }
+
+  // NOVO: Método para limpar cache quando necessário
+  void clearCache() {
+    posts.clear();
+    filteredPosts.clear();
+    userVotes.clear();
+    update();
   }
 }
