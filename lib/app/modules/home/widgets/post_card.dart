@@ -169,6 +169,7 @@ class _PostCardState extends State<PostCard>
     widget.onSave?.call();
   }
 
+  // MÉTODO PARA EXIBIR IMAGEM EM TELA CHEIA (JÁ EXISTENTE NO SEU CÓDIGO)
   void _showFullScreenImage(String imageUrl, int option) {
     Get.dialog(
       Dialog(
@@ -330,11 +331,8 @@ class _PostCardState extends State<PostCard>
           _buildHeader(),
           _buildImagesSection(),
           _buildActionBar(), // Agora inclui votos e ações na mesma linha
-          // REMOVIDO: _buildVoteInfo() não é mais necessário
-          // MOVIDO: Descrição agora vem depois das ações, como no Instagram
           if (widget.post.description.isNotEmpty) _buildDescription(),
           if (widget.post.tags.isNotEmpty) _buildTags(),
-          // REMOVIDO: _buildTimeStamp() não é mais necessário
         ],
       ),
     );
@@ -419,7 +417,8 @@ class _PostCardState extends State<PostCard>
           ),
           // Action buttons for other users' posts
           if (!widget.isOwnPost) ...[
-            _buildFollowButton(),
+            // BOTÃO SEGUIR (JÁ EXISTENTE E COM MUDANÇA DE COR/TEXTO)
+            Visibility(visible: !widget.isFollowing, child: _buildFollowButton()),
             SizedBox(width: 8.w), // Add some spacing between buttons
             _buildMenuButton(),
           ] else ...[ // Only show menu button for own posts
@@ -430,6 +429,7 @@ class _PostCardState extends State<PostCard>
     );
   }
 
+  // MÉTODO _buildFollowButton (JÁ EXISTENTE E COM MUDANÇA DE COR/TEXTO)
   Widget _buildFollowButton() {
     return Container(
       height: 32.h,
@@ -447,7 +447,7 @@ class _PostCardState extends State<PostCard>
           ),
         ),
         child: Text(
-          widget.isFollowing ? 'Seguindo' : 'Seguir',
+          'Seguir',
           style: TextStyles.labelSmall.copyWith(
             fontWeight: FontWeight.w600,
           ),
@@ -461,7 +461,7 @@ class _PostCardState extends State<PostCard>
       onSelected: (value) {
         switch (value) {
           case 'remove_vote':
-            widget.onRemoveVote?.call();
+            widget.onRemoveVote?.call(); // CHAMADA AO CALLBACK onRemoveVote
             break;
           case 'report':
             _showReportDialog();
@@ -633,6 +633,7 @@ class _PostCardState extends State<PostCard>
       children: [
         // Imagem base
         GestureDetector(
+          // CHAMADA PARA EXIBIR IMAGEM EM TELA CHEIA (JÁ EXISTENTE)
           onTap: () => _showFullScreenImage(imageUrl, option),
           child: CachedNetworkImage(
             imageUrl: imageUrl,
@@ -775,8 +776,6 @@ class _PostCardState extends State<PostCard>
             ),
           ),
 
-        // REMOVIDO: Label "Opção X" não aparece mais
-
         // Indicador de seleção
         if (widget.hasUserVoted && isSelected) _buildSelectionIndicator(),
       ],
@@ -852,6 +851,7 @@ class _PostCardState extends State<PostCard>
           ],
           const Spacer(),
           // Action buttons
+          // BOTÃO SALVAR (JÁ EXISTENTE E COM MUDANÇA DE COR)
           _buildActionButton(
             icon: Icons.bookmark_border_rounded,
             activeIcon: Icons.bookmark_rounded,
@@ -896,9 +896,6 @@ class _PostCardState extends State<PostCard>
     );
   }
 
-  // REMOVIDO: _buildVoteInfo() não é mais necessário - movido para _buildActionBar()
-
-  // CORRIGIDO: Descrição simples sem nome do usuário
   Widget _buildDescription() {
     return Padding(
       padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 8.h),
@@ -931,8 +928,6 @@ class _PostCardState extends State<PostCard>
     );
   }
 
-  // REMOVIDO: _buildTimeStamp() não é mais necessário
-
   Color _getOccasionColor(PostOccasion occasion) {
     switch (occasion) {
       case PostOccasion.trabalho:
@@ -962,7 +957,6 @@ class _PostCardState extends State<PostCard>
     }
   }
 
-  // NOVO: Função para tempo mais detalhado no header
   String _getTimeAgoDetailed(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);

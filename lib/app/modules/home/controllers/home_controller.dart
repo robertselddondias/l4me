@@ -3,16 +3,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:look4me/app/data/models/post_model.dart';
+import 'package:look4me/app/data/models/user_model.dart'; // Importar UserModel
 import 'package:look4me/app/data/models/vote_model.dart';
 import 'package:look4me/app/data/repositories/post_repository.dart';
 import 'package:look4me/app/data/repositories/vote_repository.dart';
-import 'package:look4me/app/data/repositories/user_repository.dart'; // NEW
+import 'package:look4me/app/data/repositories/user_repository.dart';
 import 'package:look4me/app/data/services/firebase_service.dart';
 
 class HomeController extends GetxController {
   final PostRepository _postRepository = PostRepository();
   final VoteRepository _voteRepository = VoteRepository();
-  final UserRepository _userRepository = UserRepository(); // NEW
+  final UserRepository _userRepository = UserRepository();
 
   final RxList<PostModel> posts = <PostModel>[].obs;
   final RxList<PostModel> filteredPosts = <PostModel>[].obs;
@@ -58,6 +59,7 @@ class HomeController extends GetxController {
       filteredPosts.clear();
 
       final fetchedPosts = await _postRepository.getAllPosts();
+      await _enrichPostsWithAuthorData(fetchedPosts); // Chamada para enriquecer os posts
       posts.assignAll(fetchedPosts);
       _filterPosts();
     } catch (e) {
@@ -83,7 +85,6 @@ class HomeController extends GetxController {
     }
   }
 
-  // UPDATED: Carregar usuários que o usuário atual segue do Firestore
   Future<void> loadUserFollowing() async {
     try {
       final currentUser = FirebaseService.currentUser;
@@ -128,6 +129,7 @@ class HomeController extends GetxController {
     try {
       isLoadingMore.value = true;
       final morePosts = await _postRepository.getMorePosts(posts.length);
+      await _enrichPostsWithAuthorData(morePosts); // Chamada para enriquecer os posts
       posts.addAll(morePosts);
       _filterPosts();
     } catch (e) {
@@ -174,7 +176,6 @@ class HomeController extends GetxController {
       final voteId = await _voteRepository.createVote(vote);
       await _postRepository.incrementVote(postId, selectedOption);
 
-      // Atualizar voto local com ID do Firestore
       userVotes[postId] = vote.copyWith(id: voteId);
 
       final postIndex = posts.indexWhere((p) => p.id == postId);
@@ -215,7 +216,6 @@ class HomeController extends GetxController {
         return;
       }
 
-      // Confirmar remoção
       final confirm = await Get.dialog<bool>(
         AlertDialog(
           title: const Text('Remover Voto'),
@@ -235,16 +235,12 @@ class HomeController extends GetxController {
 
       if (confirm != true) return;
 
-      // Remover voto do Firestore
       await _voteRepository.deleteVote(existingVote.id);
 
-      // Decrementar contador no post
       await _postRepository.decrementVote(postId, existingVote.selectedOption);
 
-      // Remover voto local
       userVotes.remove(postId);
 
-      // Atualizar post local
       final postIndex = posts.indexWhere((p) => p.id == postId);
       if (postIndex != -1) {
         final updatedPost = posts[postIndex].copyWith(
@@ -269,17 +265,16 @@ class HomeController extends GetxController {
       );
     } catch (e) {
       Get.snackbar('Erro', 'Erro ao remover voto: $e');
+      print('Erro detalhado ao remover voto: $e');
     }
   }
 
-  // UPDATED: Seguir/deixar de seguir usuário
   Future<void> toggleFollowUser(String userId) async {
     try {
       final currentUser = FirebaseService.currentUser;
       if (currentUser == null) return;
 
       if (followingUsers.contains(userId)) {
-        // Deixar de seguir
         await _userRepository.unfollowUser(currentUser.uid, userId);
         followingUsers.remove(userId);
         Get.snackbar(
@@ -290,7 +285,6 @@ class HomeController extends GetxController {
           snackPosition: SnackPosition.BOTTOM,
         );
       } else {
-        // Seguir
         await _userRepository.followUser(currentUser.uid, userId);
         followingUsers.add(userId);
         Get.snackbar(
@@ -301,16 +295,13 @@ class HomeController extends GetxController {
           snackPosition: SnackPosition.BOTTOM,
         );
       }
-      // Trigger a UI update for relevant widgets
       update();
     } catch (e) {
       Get.snackbar('Erro', 'Erro ao seguir usuário: $e');
     }
   }
 
-  // NOVA: Compartilhar post
   void sharePost(String postId) {
-    // TODO: Implementar compartilhamento real
     Get.snackbar(
       'Compartilhar',
       'Link copiado para a área de transferência!',
@@ -328,17 +319,14 @@ class HomeController extends GetxController {
     return userVotes[postId]?.selectedOption;
   }
 
-  // UPDATED: Verificar se está seguindo usuário
   bool isFollowingUser(String userId) {
     return followingUsers.contains(userId);
   }
 
-  // NOVA: Verificar se post está salvo
   bool isPostSaved(String postId) {
     return savedPosts.contains(postId);
   }
 
-  // NOVA: Verificar se é próprio post
   bool isOwnPost(String authorId) {
     final currentUser = FirebaseService.currentUser;
     return currentUser?.uid == authorId;
@@ -350,10 +338,8 @@ class HomeController extends GetxController {
       if (currentUser == null) return;
 
       if (savedPosts.contains(postId)) {
-        // Remover dos salvos
         savedPosts.remove(postId);
 
-        // TODO: Remover do Firestore
         await FirebaseService.firestore
             .collection('users')
             .doc(currentUser.uid)
@@ -370,10 +356,8 @@ class HomeController extends GetxController {
           icon: Icon(Icons.bookmark_remove, color: Colors.white),
         );
       } else {
-        // Salvar
         savedPosts.add(postId);
 
-        // TODO: Salvar no Firestore
         await FirebaseService.firestore
             .collection('users')
             .doc(currentUser.uid)
@@ -398,7 +382,6 @@ class HomeController extends GetxController {
     }
   }
 
-// NOVA: Carregar posts salvos do Firestore
   Future<void> loadSavedPosts() async {
     try {
       final currentUser = FirebaseService.currentUser;
@@ -419,7 +402,6 @@ class HomeController extends GetxController {
     }
   }
 
-// NOVA: Obter lista de posts salvos completos
   Future<List<PostModel>> getSavedPostsData() async {
     try {
       final currentUser = FirebaseService.currentUser;
@@ -430,7 +412,6 @@ class HomeController extends GetxController {
 
       List<PostModel> savedPostsData = [];
 
-      // Buscar dados completos de cada post salvo
       for (String postId in savedPostIds) {
         final post = await _postRepository.getPostById(postId);
         if (post != null && post.isActive) {
@@ -438,8 +419,9 @@ class HomeController extends GetxController {
         }
       }
 
-      // Ordenar por data de criação (mais recentes primeiro)
       savedPostsData.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      await _enrichPostsWithAuthorData(savedPostsData); // Enriquecer posts salvos
 
       return savedPostsData;
     } catch (e) {
@@ -448,7 +430,6 @@ class HomeController extends GetxController {
     }
   }
 
-// NOVA: Remover post dos salvos (para usar na tela de posts salvos)
   Future<void> removeFromSaved(String postId) async {
     try {
       final currentUser = FirebaseService.currentUser;
@@ -475,5 +456,28 @@ class HomeController extends GetxController {
     followingUsers.clear();
     savedPosts.clear();
     update();
+  }
+
+  /// NOVO: Função auxiliar para enriquecer posts com dados do autor
+  Future<void> _enrichPostsWithAuthorData(List<PostModel> postList) async {
+    final Map<String, UserModel> authorCache = {};
+
+    for (int i = 0; i < postList.length; i++) {
+      final post = postList[i];
+      if (!authorCache.containsKey(post.authorId)) {
+        final author = await _userRepository.getUserById(post.authorId);
+        if (author != null) {
+          authorCache[post.authorId] = author;
+        }
+      }
+
+      final author = authorCache[post.authorId];
+      if (author != null) {
+        postList[i] = post.copyWith(
+          authorName: author.name,
+          authorProfileImage: author.profileImage,
+        );
+      }
+    }
   }
 }
