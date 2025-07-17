@@ -24,7 +24,7 @@ class HomeView extends GetView<HomeController> {
           ],
           body: Column(
             children: [
-              _buildCategorySection(),
+              _buildModernCategorySection(),
               Expanded(child: _buildPostsList()),
             ],
           ),
@@ -35,7 +35,7 @@ class HomeView extends GetView<HomeController> {
 
   Widget _buildModernAppBar(bool isScrolled) {
     return SliverAppBar(
-      expandedHeight: 100.h, // Reduzido de 120.h
+      expandedHeight: 100.h,
       floating: true,
       pinned: true,
       snap: false,
@@ -51,37 +51,37 @@ class HomeView extends GetView<HomeController> {
               end: Alignment.bottomRight,
               colors: [
                 AppColors.surface,
-                AppColors.background,
+                AppColors.background.withOpacity(0.8),
               ],
             ),
           ),
           child: Stack(
             children: [
-              // Background pattern
+              // Pattern moderno e sutil
               Positioned.fill(
                 child: CustomPaint(
-                  painter: _BackgroundPatternPainter(),
+                  painter: _ModernBackgroundPainter(),
                 ),
               ),
-              // Content
+              // Conteúdo
               Positioned.fill(
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 16.h), // Reduzido
+                  padding: EdgeInsets.fromLTRB(24.w, 12.h, 24.w, 16.h),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Row(
                         children: [
-                          _buildLogo(),
+                          _buildModernLogo(),
                           const Spacer(),
                           _buildNotificationButton(),
-                          SizedBox(width: 6.w), // Reduzido
+                          SizedBox(width: 12.w),
                           _buildRefreshButton(),
                         ],
                       ),
-                      SizedBox(height: 8.h), // Reduzido
-                      _buildWelcomeText(),
+                      SizedBox(height: 12.h),
+                      _buildWelcomeSection(),
                     ],
                   ),
                 ),
@@ -93,128 +93,127 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  Widget _buildLogo() {
+  Widget _buildModernLogo() {
     return Row(
       children: [
         Container(
-          width: 40.w, // Reduzido de 48.w
-          height: 40.h, // Reduzido de 48.h
+          width: 36.w,
+          height: 36.h,
           decoration: BoxDecoration(
-            gradient: AppColors.primaryGradient,
-            borderRadius: BorderRadius.circular(12.r), // Reduzido
+            gradient: LinearGradient(
+              colors: [AppColors.primary, AppColors.secondary],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(12.r),
             boxShadow: [
               BoxShadow(
                 color: AppColors.primary.withOpacity(0.3),
-                blurRadius: 8, // Reduzido
-                offset: const Offset(0, 2), // Reduzido
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
           child: Icon(
             Icons.favorite_rounded,
             color: AppColors.onPrimary,
-            size: 20.sp, // Reduzido
+            size: 18.sp,
           ),
         ),
-        SizedBox(width: 10.w), // Reduzido
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Look4Me',
-              style: TextStyles.titleMedium.copyWith( // Reduzido de titleLarge
-                fontWeight: FontWeight.w800,
-                color: AppColors.text,
-                letterSpacing: -0.3, // Reduzido
-              ),
-            ),
-            Text(
-              'Seu estilo, sua escolha',
-              style: TextStyles.labelSmall.copyWith( // Reduzido
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
+        SizedBox(width: 10.w),
+        Text(
+          'Look4Me',
+          style: TextStyles.titleSmall.copyWith(
+            fontWeight: FontWeight.w800,
+            color: AppColors.text,
+            letterSpacing: -0.5,
+          ),
         ),
       ],
     );
   }
 
   Widget _buildNotificationButton() {
-    return Stack(
-      children: [
-        Container(
-          width: 36.w, // Reduzido de 44.w
-          height: 36.h, // Reduzido de 44.h
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12.r), // Reduzido
-            border: Border.all(
-              color: AppColors.border.withOpacity(0.5),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.shadow.withOpacity(0.1),
-                blurRadius: 6, // Reduzido
-                offset: const Offset(0, 1), // Reduzido
-              ),
-            ],
+    return Obx(() => Container(
+      width: 36.w,
+      height: 36.h,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: AppColors.border.withOpacity(0.3),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
           ),
-          child: IconButton(
+        ],
+      ),
+      child: Stack(
+        children: [
+          IconButton(
             onPressed: () {
-              // TODO: Navegar para notificações
-              Get.snackbar('Notificações', 'Em breve!');
+              // TODO: Implementar notificações
+              Get.snackbar(
+                'Notificações',
+                'Nenhuma notificação nova!',
+                backgroundColor: AppColors.info,
+                colorText: Colors.white,
+                icon: Icon(Icons.notifications_rounded, color: Colors.white),
+                duration: const Duration(seconds: 2),
+              );
             },
             icon: Icon(
-              Icons.notifications_outlined,
+              Icons.notifications_none_rounded,
               color: AppColors.text,
-              size: 16.sp, // Reduzido
+              size: 16.sp,
             ),
             padding: EdgeInsets.zero,
           ),
-        ),
-        // Badge de notificação
-        Positioned(
-          top: 6.h, // Reduzido
-          right: 6.w, // Reduzido
-          child: Container(
-            width: 6.w, // Reduzido
-            height: 6.h, // Reduzido
-            decoration: BoxDecoration(
-              color: AppColors.error,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: AppColors.surface,
-                width: 1,
+          // Badge de notificação
+          if (controller.hasNotifications.value)
+            Positioned(
+              top: 6.h,
+              right: 6.w,
+              child: Container(
+                width: 6.w,
+                height: 6.h,
+                decoration: BoxDecoration(
+                  color: AppColors.error,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.surface,
+                    width: 1,
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-      ],
-    );
+        ],
+      ),
+    ));
   }
 
   Widget _buildRefreshButton() {
-    return Obx(() => AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: 36.w, // Reduzido de 44.w
-      height: 36.h, // Reduzido de 44.h
+    return Obx(() => Container(
+      width: 36.w,
+      height: 36.h,
       decoration: BoxDecoration(
         color: controller.isLoading.value
             ? AppColors.primary.withOpacity(0.1)
             : AppColors.surface,
-        borderRadius: BorderRadius.circular(12.r), // Reduzido
+        borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
           color: controller.isLoading.value
               ? AppColors.primary.withOpacity(0.3)
-              : AppColors.border.withOpacity(0.5),
+              : AppColors.border.withOpacity(0.3),
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadow.withOpacity(0.1),
-            blurRadius: 6, // Reduzido
-            offset: const Offset(0, 1), // Reduzido
+            color: AppColors.shadow.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -228,7 +227,7 @@ class HomeView extends GetView<HomeController> {
             color: controller.isLoading.value
                 ? AppColors.primary
                 : AppColors.text,
-            size: 16.sp, // Reduzido
+            size: 16.sp,
           ),
         ),
         padding: EdgeInsets.zero,
@@ -236,39 +235,30 @@ class HomeView extends GetView<HomeController> {
     ));
   }
 
-  Widget _buildWelcomeText() {
+  Widget _buildWelcomeSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Descubra o look perfeito',
-          style: TextStyles.titleSmall.copyWith( // Reduzido de titleMedium
-            fontWeight: FontWeight.w600,
+          style: TextStyles.titleMedium.copyWith(
+            fontWeight: FontWeight.w700,
             color: AppColors.text,
+            letterSpacing: -0.5,
           ),
         ),
-        SizedBox(height: 1.h), // Reduzido
-        Obx(() => Text(
-          controller.filteredPosts.length == 1
-              ? '${controller.filteredPosts.length} look disponível'
-              : '${controller.filteredPosts.length} looks disponíveis',
-          style: TextStyles.labelSmall.copyWith( // Reduzido
-            color: AppColors.textTertiary,
-            fontWeight: FontWeight.w500,
-          ),
-        )),
       ],
     );
   }
 
-  Widget _buildCategorySection() {
+  Widget _buildModernCategorySection() {
     return Container(
-      height: 52.h, // Muito reduzido
+      height: 60.h,
       decoration: BoxDecoration(
         color: AppColors.surface,
         border: Border(
           bottom: BorderSide(
-            color: AppColors.border.withOpacity(0.3),
+            color: AppColors.border.withOpacity(0.2),
             width: 1,
           ),
         ),
@@ -302,28 +292,38 @@ class HomeView extends GetView<HomeController> {
         color: AppColors.primary,
         backgroundColor: AppColors.surface,
         child: ListView.builder(
-          padding: EdgeInsets.only(top: 12.h),
+          padding: EdgeInsets.fromLTRB(0, 16.h, 0, 100.h),
           itemCount: controller.filteredPosts.length +
               (controller.isLoadingMore.value ? 1 : 0),
           itemBuilder: (context, index) {
             if (index == controller.filteredPosts.length) {
               return Container(
-                padding: EdgeInsets.symmetric(vertical: 24.h),
+                padding: EdgeInsets.symmetric(vertical: 32.h),
                 child: Column(
                   children: [
-                    SizedBox(
-                      width: 24.w,
-                      height: 24.h,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.primary,
+                    Container(
+                      width: 32.w,
+                      height: 32.h,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [AppColors.primary, AppColors.secondary],
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(8.w),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.onPrimary,
+                        ),
                       ),
                     ),
-                    SizedBox(height: 12.h),
+                    SizedBox(height: 16.h),
                     Text(
                       'Carregando mais looks...',
-                      style: TextStyles.bodySmall.copyWith(
+                      style: TextStyles.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -353,7 +353,6 @@ class HomeView extends GetView<HomeController> {
   }
 
   void _handleSavePost(post) {
-    // TODO: Implementar funcionalidade de salvar
     Get.snackbar(
       'Post Salvo',
       'Look adicionado aos seus favoritos!',
@@ -361,11 +360,13 @@ class HomeView extends GetView<HomeController> {
       colorText: Colors.white,
       icon: Icon(Icons.bookmark_rounded, color: Colors.white),
       duration: const Duration(seconds: 2),
+      snackPosition: SnackPosition.BOTTOM,
+      margin: EdgeInsets.all(16.w),
+      borderRadius: 12.r,
     );
   }
 
   void _handleSharePost(post) {
-    // TODO: Implementar funcionalidade de compartilhar
     Get.snackbar(
       'Compartilhar',
       'Link copiado para a área de transferência!',
@@ -373,32 +374,48 @@ class HomeView extends GetView<HomeController> {
       colorText: Colors.white,
       icon: Icon(Icons.share_rounded, color: Colors.white),
       duration: const Duration(seconds: 2),
+      snackPosition: SnackPosition.BOTTOM,
+      margin: EdgeInsets.all(16.w),
+      borderRadius: 12.r,
     );
   }
 }
 
-// Custom painter para o padrão de fundo
-class _BackgroundPatternPainter extends CustomPainter {
+// Custom painter moderno para o padrão de fundo
+class _ModernBackgroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColors.primary.withOpacity(0.02)
+      ..color = AppColors.primary.withOpacity(0.03)
       ..style = PaintingStyle.fill;
 
     final path = Path();
 
-    // Criar padrão geométrico sutil
-    for (int i = 0; i < 5; i++) {
-      final x = (size.width / 4) * i;
-      final y = size.height * 0.6;
+    // Criar padrão geométrico moderno e sutil
+    for (int i = 0; i < 3; i++) {
+      final x = (size.width / 2) + (i * 60);
+      final y = size.height * 0.3;
 
+      // Círculos sutis
       path.addOval(Rect.fromCircle(
         center: Offset(x, y),
-        radius: 20,
+        radius: 15 + (i * 5),
       ));
     }
 
+    // Formas geométricas abstratas
+    final secondaryPaint = Paint()
+      ..color = AppColors.secondary.withOpacity(0.02)
+      ..style = PaintingStyle.fill;
+
+    final secondaryPath = Path();
+    secondaryPath.moveTo(size.width * 0.8, size.height * 0.6);
+    secondaryPath.lineTo(size.width * 0.9, size.height * 0.7);
+    secondaryPath.lineTo(size.width * 0.85, size.height * 0.8);
+    secondaryPath.close();
+
     canvas.drawPath(path, paint);
+    canvas.drawPath(secondaryPath, secondaryPaint);
   }
 
   @override

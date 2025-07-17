@@ -15,6 +15,7 @@ class HomeController extends GetxController {
   final RxBool isLoadingMore = false.obs;
   final RxString selectedOccasion = 'Todos'.obs;
   final RxMap<String, VoteModel> userVotes = <String, VoteModel>{}.obs;
+  final RxBool hasNotifications = false.obs;
 
   final List<String> occasions = [
     'Todos',
