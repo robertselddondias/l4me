@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:look4me/app/core/constants/app_colors.dart';
 import 'package:look4me/app/data/models/post_model.dart';
 import 'package:look4me/app/data/models/user_model.dart'; // Importar UserModel
 import 'package:look4me/app/data/models/vote_model.dart';
@@ -9,6 +11,7 @@ import 'package:look4me/app/data/repositories/post_repository.dart';
 import 'package:look4me/app/data/repositories/vote_repository.dart';
 import 'package:look4me/app/data/repositories/user_repository.dart';
 import 'package:look4me/app/data/services/firebase_service.dart';
+import 'package:look4me/app/modules/profile/controllers/profile_controller.dart';
 
 class HomeController extends GetxController {
   final PostRepository _postRepository = PostRepository();
@@ -513,6 +516,223 @@ class HomeController extends GetxController {
           authorProfileImage: author.profileImage,
         );
       }
+    }
+  }
+
+  Future<void> deletePost(String postId) async {
+    try {
+      final currentUser = FirebaseService.currentUser;
+      if (currentUser == null) return;
+
+      // Verificar se o post pertence ao usuário atual
+      final post = posts.firstWhereOrNull((p) => p.id == postId);
+      if (post == null || post.authorId != currentUser.uid) {
+        Get.snackbar(
+          'Erro',
+          'Você não tem permissão para excluir este post',
+          backgroundColor: AppColors.error,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+
+      // Removido isLoading.value = true; pois agora controlamos no diálogo
+
+      // 1. Deletar as imagens do Firebase Storage primeiro
+      await _deletePostImages(post);
+
+      // 2. Deletar todos os votos relacionados ao post
+      await _deletePostVotes(postId);
+
+      // 3. Remover o post dos salvos de todos os usuários
+      await _removePostFromAllSavedLists(postId);
+
+      // 4. Excluir o documento do post no Firestore
+      await _postRepository.deletePost(postId);
+
+      // 5. Remover das listas locais
+      posts.removeWhere((p) => p.id == postId);
+      filteredPosts.removeWhere((p) => p.id == postId);
+
+      // 6. Remover dos posts salvos locais se estiver lá
+      if (savedPosts.contains(postId)) {
+        savedPosts.remove(postId);
+      }
+
+      // 7. Remover dos votos do usuário local se existir
+      if (userVotes.containsKey(postId)) {
+        userVotes.remove(postId);
+      }
+
+      // 8. Atualizar contador de posts do usuário
+      await _userRepository.decrementPostsCount(currentUser.uid);
+
+      // 9. Forçar atualização das listas reativas
+      posts.refresh();
+      filteredPosts.refresh();
+      savedPosts.refresh();
+      userVotes.refresh();
+
+      // 10. Atualizar também no ProfileController se estiver registrado
+      if (Get.isRegistered<ProfileController>()) {
+        final profileController = Get.find<ProfileController>();
+        profileController.userPosts.removeWhere((p) => p.id == postId);
+
+        // Atualizar dados do usuário atual se disponível
+        if (profileController.currentUser.value != null) {
+          profileController.currentUser.value = profileController.currentUser.value!.copyWith(
+            postsCount: profileController.currentUser.value!.postsCount - 1,
+          );
+        }
+      }
+
+      Get.snackbar(
+        'Sucesso',
+        'Post excluído com sucesso!',
+        backgroundColor: AppColors.success,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        icon: Icon(Icons.check_circle, color: Colors.white),
+      );
+
+    } catch (e) {
+      print('Erro ao excluir post: $e');
+      Get.snackbar(
+        'Erro',
+        'Erro ao excluir post. Tente novamente.',
+        backgroundColor: AppColors.error,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        icon: Icon(Icons.error, color: Colors.white),
+      );
+      // Re-throw para que o PostCard possa tratar o erro
+      rethrow;
+    }
+    // Removido finally com isLoading.value = false;
+  }
+
+// Método para deletar as imagens do Firebase Storage
+  Future<void> _deletePostImages(PostModel post) async {
+    try {
+      final storage = FirebaseStorage.instance;
+
+      // Lista para armazenar as tarefas de exclusão
+      List<Future<void>> deleteTasks = [];
+
+      // Deletar a primeira imagem se existir
+      if (post.imageOption1.isNotEmpty) {
+        deleteTasks.add(_deleteImageFromStorage(storage, post.imageOption1, 'Imagem 1'));
+      }
+
+      // Deletar a segunda imagem se existir
+      if (post.imageOption2.isNotEmpty) {
+        deleteTasks.add(_deleteImageFromStorage(storage, post.imageOption2, 'Imagem 2'));
+      }
+
+      // Executar todas as exclusões em paralelo
+      if (deleteTasks.isNotEmpty) {
+        await Future.wait(deleteTasks);
+      }
+
+    } catch (e) {
+      print('⚠️ Erro geral ao deletar imagens do Storage: $e');
+      // Não interrompe o processo de exclusão do post mesmo se as imagens falharem
+    }
+  }
+
+// Método auxiliar para deletar uma imagem específica
+  Future<void> _deleteImageFromStorage(FirebaseStorage storage, String imageUrl, String imageName) async {
+    try {
+      final ref = storage.refFromURL(imageUrl);
+      await ref.delete();
+      print('✅ $imageName deletada do Storage: $imageUrl');
+    } catch (e) {
+      print('⚠️ Erro ao deletar $imageName: $e');
+      // Não propaga o erro para não interromper outras exclusões
+    }
+  }
+
+// Método para deletar todos os votos relacionados ao post (CORRIGIDO)
+  Future<void> _deletePostVotes(String postId) async {
+    try {
+      // CORREÇÃO: Usar abordagem mais segura sem collectionGroup complexo
+      final usersSnapshot = await FirebaseService.firestore
+          .collection('users')
+          .get();
+
+      final batch = FirebaseService.firestore.batch();
+      int deletedVotes = 0;
+
+      for (final userDoc in usersSnapshot.docs) {
+        try {
+          final voteRef = userDoc.reference
+              .collection('votes')
+              .doc(postId);
+
+          // Verificar se o voto existe antes de tentar deletar
+          final voteDoc = await voteRef.get();
+          if (voteDoc.exists) {
+            batch.delete(voteRef);
+            deletedVotes++;
+          }
+        } catch (e) {
+          // Ignorar erros de usuários específicos
+          print('⚠️ Erro ao deletar voto do usuário ${userDoc.id}: $e');
+        }
+      }
+
+      if (deletedVotes > 0) {
+        await batch.commit();
+        print('✅ $deletedVotes votos deletados para o post $postId');
+      }
+
+    } catch (e) {
+      print('⚠️ Erro ao deletar votos do post: $e');
+      // Não interrompe o processo principal
+    }
+  }
+
+// Método para remover o post dos salvos de todos os usuários (CORRIGIDO)
+  Future<void> _removePostFromAllSavedLists(String postId) async {
+    try {
+      // CORREÇÃO: Usar uma abordagem diferente pois collectionGroup com FieldPath.documentId
+      // pode causar problemas no Flutter
+
+      // Abordagem alternativa: buscar na coleção de usuários
+      final usersSnapshot = await FirebaseService.firestore
+          .collection('users')
+          .get();
+
+      final batch = FirebaseService.firestore.batch();
+      int removedCount = 0;
+
+      for (final userDoc in usersSnapshot.docs) {
+        try {
+          final savedPostRef = userDoc.reference
+              .collection('savedPosts')
+              .doc(postId);
+
+          // Verificar se o documento existe antes de tentar deletar
+          final savedPostDoc = await savedPostRef.get();
+          if (savedPostDoc.exists) {
+            batch.delete(savedPostRef);
+            removedCount++;
+          }
+        } catch (e) {
+          // Ignorar erros de usuários específicos
+          print('⚠️ Erro ao remover post salvo do usuário ${userDoc.id}: $e');
+        }
+      }
+
+      if (removedCount > 0) {
+        await batch.commit();
+        print('✅ Post removido dos salvos de $removedCount usuários');
+      }
+
+    } catch (e) {
+      print('⚠️ Erro ao remover post dos salvos: $e');
+      // Não interrompe o processo principal
     }
   }
 }

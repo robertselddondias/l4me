@@ -19,6 +19,8 @@ class CreatePostController extends GetxController {
   final Rx<PostOccasion> selectedOccasion = PostOccasion.casual.obs;
   final RxList<String> selectedTags = <String>[].obs;
 
+  final RxBool hasBothImages = false.obs;
+
   final TextEditingController descriptionController = TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
@@ -90,6 +92,20 @@ class CreatePostController extends GetxController {
 
   void selectOccasion(PostOccasion occasion) {
     selectedOccasion.value = occasion;
+  }
+
+  void resetOccasion() {
+    selectedOccasion.value = PostOccasion.casual;
+  }
+
+// Método para validar se ocasião foi selecionada
+  bool get hasValidOccasion {
+    return selectedOccasion.value != null;
+  }
+
+// Getter para o nome da ocasião atual
+  String get currentOccasionName {
+    return selectedOccasion.value.name;
   }
 
   void toggleTag(String tag) {

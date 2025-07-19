@@ -108,11 +108,23 @@ class PostRepository {
 
   Future<void> deletePost(String postId) async {
     try {
-      await _postsCollection.doc(postId).update({
-        'isActive': false,
-      });
+      await _postsCollection.doc(postId).delete();
+      print('✅ Post $postId deletado do Firestore');
     } catch (e) {
       throw Exception('Erro ao deletar post: $e');
+    }
+  }
+
+  Future<PostModel?> getPostForDeletion(String postId) async {
+    try {
+      final doc = await _postsCollection.doc(postId).get();
+
+      if (doc.exists) {
+        return PostModel.fromMap(doc.data() as Map<String, dynamic>);
+      }
+      return null;
+    } catch (e) {
+      throw Exception('Erro ao buscar post para exclusão: $e');
     }
   }
 

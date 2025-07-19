@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -19,6 +21,7 @@ class PostCard extends StatefulWidget {
   final bool isFollowing;
   final bool isOwnPost;
   final bool isSaved;
+  final Function(String)? onDeletePost;
 
   const PostCard({
     Key? key,
@@ -33,6 +36,7 @@ class PostCard extends StatefulWidget {
     this.isFollowing = false,
     this.isOwnPost = false,
     this.isSaved = false,
+    this.onDeletePost,
   }) : super(key: key);
 
   @override
@@ -563,15 +567,34 @@ class _PostCardState extends State<PostCard>
             widget.onRemoveVote?.call();
             break;
           case 'unfollow':
-            widget.onFollow?.call(); // Reutiliza o callback existente
+            _showUnfollowConfirmation(Get.find<HomeController>());
             break;
           case 'report':
             _showReportDialog();
+            break;
+          case 'delete_post':
+            _showDeletePostDialog();
             break;
         }
       },
       itemBuilder: (context) {
         List<PopupMenuEntry<String>> items = [];
+
+        // Opção de excluir post (apenas para posts próprios)
+        if (widget.isOwnPost) {
+          items.add(
+            const PopupMenuItem(
+              value: 'delete_post',
+              child: Row(
+                children: [
+                  Icon(Icons.delete_outline, color: AppColors.error),
+                  SizedBox(width: 12),
+                  Text('Excluir post', style: TextStyle(color: AppColors.error)),
+                ],
+              ),
+            ),
+          );
+        }
 
         // Opção de remover voto
         if (widget.hasUserVoted && widget.onRemoveVote != null) {
@@ -589,7 +612,7 @@ class _PostCardState extends State<PostCard>
           );
         }
 
-        // NOVO: Opção de deixar de seguir
+        // Opção de deixar de seguir
         if (!widget.isOwnPost && widget.isFollowing) {
           items.add(
             const PopupMenuItem(
@@ -654,6 +677,131 @@ class _PostCardState extends State<PostCard>
         ),
       ),
     );
+  }
+
+  void _showDeletePostDialog() {
+    Get.dialog(
+      AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.warning_outlined, color: AppColors.error, size: 24.sp),
+            SizedBox(width: 8.w),
+            Text('Excluir Post'),
+          ],
+        ),
+        content: Text(
+          'Esta ação não pode ser desfeita. O post será excluído permanentemente.',
+          style: TextStyles.bodyMedium.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => _executeDeletePost(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _executeDeletePost() async {
+    // Fecha o diálogo de confirmação
+    Get.back();
+
+    // Controle de loading
+    bool isLoadingActive = true;
+
+    // Mostra loading simples com timeout
+    Get.dialog(
+      PopScope(
+        canPop: false,
+        child: AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              ),
+              SizedBox(height: 16.h),
+              Text(
+                'Excluindo post...',
+                style: TextStyles.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+
+    // Timeout de segurança (15 segundos)
+    final timeoutTimer = Timer(Duration(seconds: 15), () {
+      if (isLoadingActive) {
+        isLoadingActive = false;
+        if (Get.isDialogOpen == true) {
+          Get.back(); // Fecha loading
+        }
+        Get.snackbar(
+          'Timeout',
+          'A operação demorou muito. Tente novamente.',
+          backgroundColor: AppColors.warning,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    });
+
+    try {
+      // Executa a exclusão
+      await Get.find<HomeController>().deletePost(widget.post.id);
+
+      // Cancela o timeout
+      timeoutTimer.cancel();
+
+      // Fecha o loading se ainda estiver ativo
+      if (isLoadingActive) {
+        isLoadingActive = false;
+        if (Get.isDialogOpen == true) {
+          Get.back();
+        }
+      }
+
+    } catch (e) {
+      // Cancela o timeout
+      timeoutTimer.cancel();
+
+      // Fecha o loading em caso de erro
+      if (isLoadingActive) {
+        isLoadingActive = false;
+        if (Get.isDialogOpen == true) {
+          Get.back();
+        }
+      }
+
+      // Mostra erro
+      Get.snackbar(
+        'Erro',
+        'Falha ao excluir o post: $e',
+        backgroundColor: AppColors.error,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        icon: Icon(Icons.error, color: Colors.white),
+      );
+    }
   }
 
   void _showUnfollowConfirmation(HomeController controller) {
@@ -1147,6 +1295,32 @@ class _PostCardState extends State<PostCard>
       return 'Há ${difference.inMinutes} ${difference.inMinutes == 1 ? 'minuto' : 'minutos'}';
     } else {
       return 'Agora mesmo';
+    }
+  }
+
+  void _deletePost() {
+    try {
+      // Chama o método deletePost do HomeController
+      final homeController = Get.find<HomeController>();
+      homeController.deletePost(widget.post.id);
+
+      Get.snackbar(
+        'Sucesso',
+        'Post excluído com sucesso!',
+        backgroundColor: AppColors.success,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        icon: Icon(Icons.check_circle, color: Colors.white),
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Erro',
+        'Erro ao excluir post: $e',
+        backgroundColor: AppColors.error,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        icon: Icon(Icons.error, color: Colors.white),
+      );
     }
   }
 }
