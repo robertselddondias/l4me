@@ -192,14 +192,6 @@ class HomeController extends GetxController {
         posts[postIndex] = updatedPost;
         _filterPosts();
       }
-
-      Get.snackbar(
-        'Sucesso',
-        'Voto registrado!',
-        backgroundColor: const Color(0xFF10B981),
-        colorText: const Color(0xFFFFFFFF),
-        snackPosition: SnackPosition.BOTTOM,
-      );
     } catch (e) {
       Get.snackbar('Erro', 'Erro ao votar: $e');
     }
@@ -255,14 +247,6 @@ class HomeController extends GetxController {
         posts[postIndex] = updatedPost;
         _filterPosts();
       }
-
-      Get.snackbar(
-        'Sucesso',
-        'Voto removido!',
-        backgroundColor: const Color(0xFFF59E0B),
-        colorText: const Color(0xFFFFFFFF),
-        snackPosition: SnackPosition.BOTTOM,
-      );
     } catch (e) {
       Get.snackbar('Erro', 'Erro ao remover voto: $e');
       print('Erro detalhado ao remover voto: $e');
@@ -274,30 +258,62 @@ class HomeController extends GetxController {
       final currentUser = FirebaseService.currentUser;
       if (currentUser == null) return;
 
+      print('DEBUG: Antes - followingUsers.contains($userId): ${followingUsers.contains(userId)}');
+
+      // Atualização imediata no RxSet
       if (followingUsers.contains(userId)) {
-        await _userRepository.unfollowUser(currentUser.uid, userId);
         followingUsers.remove(userId);
-        Get.snackbar(
-          'Sucesso',
-          'Você deixou de seguir este usuário',
-          backgroundColor: const Color(0xFFF59E0B),
-          colorText: const Color(0xFFFFFFFF),
-          snackPosition: SnackPosition.BOTTOM,
-        );
       } else {
-        await _userRepository.followUser(currentUser.uid, userId);
         followingUsers.add(userId);
+      }
+
+      print('DEBUG: Depois - followingUsers.contains($userId): ${followingUsers.contains(userId)}');
+
+      // Backend (sem bloquear UI)
+      _updateFollowBackend(currentUser.uid, userId);
+
+    } catch (e) {
+      // Reverter em caso de erro
+      if (followingUsers.contains(userId)) {
+        followingUsers.remove(userId);
+      } else {
+        followingUsers.add(userId);
+      }
+      Get.snackbar('Erro', 'Erro ao seguir usuário: $e');
+    }
+  }
+
+  void _updateFollowBackend(String currentUserId, String targetUserId) async {
+    try {
+      final isFollowing = followingUsers.contains(targetUserId);
+
+      if (isFollowing) {
+        await _userRepository.followUser(currentUserId, targetUserId);
         Get.snackbar(
           'Sucesso',
           'Você agora segue este usuário!',
           backgroundColor: const Color(0xFF10B981),
-          colorText: const Color(0xFFFFFFFF),
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      } else {
+        await _userRepository.unfollowUser(currentUserId, targetUserId);
+        Get.snackbar(
+          'Sucesso',
+          'Você deixou de seguir este usuário',
+          backgroundColor: const Color(0xFFF59E0B),
+          colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
         );
       }
-      update();
     } catch (e) {
-      Get.snackbar('Erro', 'Erro ao seguir usuário: $e');
+      // Reverter se der erro
+      if (followingUsers.contains(targetUserId)) {
+        followingUsers.remove(targetUserId);
+      } else {
+        followingUsers.add(targetUserId);
+      }
+      print('Erro na operação backend follow: $e');
     }
   }
 
@@ -337,9 +353,25 @@ class HomeController extends GetxController {
       final currentUser = FirebaseService.currentUser;
       if (currentUser == null) return;
 
+      print('DEBUG: Antes - Post $postId está salvo: ${savedPosts.contains(postId)}');
+
+      // CORREÇÃO: Atualização FORÇADA da RxSet
       if (savedPosts.contains(postId)) {
         savedPosts.remove(postId);
+        print('DEBUG: Removido do savedPosts');
+      } else {
+        savedPosts.add(postId);
+        print('DEBUG: Adicionado ao savedPosts');
+      }
 
+      // CRÍTICO: Forçar atualização da RxSet
+      savedPosts.refresh();
+
+      print('DEBUG: Depois - Post $postId está salvo: ${savedPosts.contains(postId)}');
+
+      // Operação no backend
+      if (!savedPosts.contains(postId)) {
+        // Foi removido
         await FirebaseService.firestore
             .collection('users')
             .doc(currentUser.uid)
@@ -356,8 +388,7 @@ class HomeController extends GetxController {
           icon: Icon(Icons.bookmark_remove, color: Colors.white),
         );
       } else {
-        savedPosts.add(postId);
-
+        // Foi adicionado
         await FirebaseService.firestore
             .collection('users')
             .doc(currentUser.uid)
@@ -367,17 +398,21 @@ class HomeController extends GetxController {
           'postId': postId,
           'savedAt': FieldValue.serverTimestamp(),
         });
-
-        Get.snackbar(
-          'Salvo',
-          'Post salvo com sucesso!',
-          backgroundColor: Colors.amber,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-          icon: Icon(Icons.bookmark_rounded, color: Colors.white),
-        );
       }
+
+      print('DEBUG: Operação no backend concluída');
+
     } catch (e) {
+      print('ERROR: $e');
+
+      // CORREÇÃO: Rollback em caso de erro
+      if (savedPosts.contains(postId)) {
+        savedPosts.remove(postId);
+      } else {
+        savedPosts.add(postId);
+      }
+      savedPosts.refresh();
+
       Get.snackbar('Erro', 'Erro ao salvar post: $e');
     }
   }

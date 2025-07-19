@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:look4me/app/core/constants/app_colors.dart';
 import 'package:look4me/app/core/themes/text_styles.dart';
 import 'package:look4me/app/data/models/post_model.dart';
+import 'package:look4me/app/modules/home/controllers/home_controller.dart';
 
 class PostCard extends StatefulWidget {
   final PostModel post;
@@ -53,6 +54,8 @@ class _PostCardState extends State<PostCard>
   late Animation<double> _selectionBlurRadiusAnimation;
 
   int? _selectedOption;
+
+  bool? _localIsSaved;
 
   @override
   void initState() {
@@ -140,6 +143,7 @@ class _PostCardState extends State<PostCard>
 
   void _initializeState() {
     _selectedOption = widget.hasUserVoted ? widget.userVote : null;
+    _localIsSaved = widget.isSaved;
 
     _heartAnimationController.reset();
     _selectionAnimationController.reset();
@@ -167,11 +171,21 @@ class _PostCardState extends State<PostCard>
       needsStateUpdate = true;
     }
 
+    // NOVO: Sincronizar estado local apenas se vier de fora
+    if (oldWidget.isSaved != widget.isSaved && _localIsSaved == oldWidget.isSaved) {
+      _localIsSaved = widget.isSaved;
+      needsStateUpdate = true;
+    }
+
     if (needsStateUpdate) {
       _initializeState();
 
       if (!oldWidget.hasUserVoted && widget.hasUserVoted) {
         _handleVoteSuccess();
+      }
+
+      if (mounted) {
+        setState(() {});
       }
     }
   }
@@ -203,10 +217,24 @@ class _PostCardState extends State<PostCard>
   }
 
   void _handleSave() {
+    print('DEBUG: _handleSave chamado. Estado atual: $_localIsSaved');
+
+    // Atualizar estado local IMEDIATAMENTE
+    setState(() {
+      _localIsSaved = !_localIsSaved!;
+    });
+
+    print('DEBUG: Novo estado local: $_localIsSaved');
+
     _saveAnimationController.forward().then((_) {
       _saveAnimationController.reverse();
     });
+
     widget.onSave?.call();
+  }
+
+  bool get _isCurrentlySaved {
+    return _localIsSaved ?? widget.isSaved;
   }
 
   // MÉTODO PARA EXIBIR IMAGEM EM TELA CHEIA (JÁ EXISTENTE NO SEU CÓDIGO)
@@ -355,7 +383,7 @@ class _PostCardState extends State<PostCard>
       margin: EdgeInsets.only(bottom: 24.h),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(0), // Removido border radius para ficar mais como Instagram
+        borderRadius: BorderRadius.circular(0),
         boxShadow: [
           BoxShadow(
             color: AppColors.shadow.withOpacity(0.04),
@@ -368,11 +396,11 @@ class _PostCardState extends State<PostCard>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
-          _buildImagesSection(),
-          _buildActionBar(), // Agora inclui votos e ações na mesma linha
+          _buildHeader(), // Header limpo - só badge colorido
+          _buildImagesSection(), // Imagens sem divisor da ocasião
+          _buildActionBar(), // Action bar normal
           if (widget.post.description.isNotEmpty) _buildDescription(),
-          if (widget.post.tags.isNotEmpty) _buildTags(),
+          if (widget.post.tags.isNotEmpty) _buildTags(), // Tags normais, sem ocasião
         ],
       ),
     );
@@ -380,71 +408,68 @@ class _PostCardState extends State<PostCard>
 
   Widget _buildHeader() {
     return Padding(
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 12.h),
       child: Row(
         children: [
-          // Avatar
-          Container(
-            width: 40.w,
-            height: 40.h,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: AppColors.primary.withOpacity(0.2),
-                width: 1.5,
+          // Avatar com badge da ocasião
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: 22.r,
+                backgroundColor: AppColors.primaryLight,
+                backgroundImage: widget.post.authorProfileImage != null &&
+                    widget.post.authorProfileImage!.isNotEmpty
+                    ? CachedNetworkImageProvider(widget.post.authorProfileImage!)
+                    : null,
+                child: widget.post.authorProfileImage == null ||
+                    widget.post.authorProfileImage!.isEmpty
+                    ? Icon(
+                  Icons.person_rounded,
+                  color: AppColors.primary,
+                  size: 22.sp,
+                )
+                    : null,
               ),
-            ),
-            child: CircleAvatar(
-              radius: 19.r,
-              backgroundColor: AppColors.primaryLight,
-              backgroundImage: widget.post.authorProfileImage != null &&
-                  widget.post.authorProfileImage!.isNotEmpty
-                  ? CachedNetworkImageProvider(widget.post.authorProfileImage!)
-                  : null,
-              child: widget.post.authorProfileImage == null ||
-                  widget.post.authorProfileImage!.isEmpty
-                  ? Icon(
-                Icons.person_rounded,
-                color: AppColors.primary,
-                size: 20.sp,
-              )
-                  : null,
-            ),
+              // Badge da ocasião
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  width: 18.w,
+                  height: 18.h,
+                  decoration: BoxDecoration(
+                    color: _getOccasionColor(widget.post.occasion),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.surface,
+                      width: 2,
+                    ),
+                  ),
+                  child: Icon(
+                    _getOccasionIcon(widget.post.occasion),
+                    size: 10.sp,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
           ),
           SizedBox(width: 12.w),
-          // User info
+          // User info - CLEAN
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      widget.post.authorName,
-                      style: TextStyles.titleSmall.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.text,
-                      ),
-                    ),
-                    SizedBox(width: 8.w),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                      decoration: BoxDecoration(
-                        color: _getOccasionColor(widget.post.occasion).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6.r),
-                      ),
-                      child: Text(
-                        widget.post.occasionDisplayName,
-                        style: TextStyles.labelSmall.copyWith(
-                          color: _getOccasionColor(widget.post.occasion),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 9.sp,
-                        ),
-                      ),
-                    ),
-                  ],
+                Text(
+                  widget.post.authorName,
+                  style: TextStyles.titleSmall.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.text,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
-                SizedBox(height: 2.h),
+                SizedBox(width: 2.h),
                 Text(
                   _getTimeAgoDetailed(widget.post.createdAt),
                   style: TextStyles.bodySmall.copyWith(
@@ -455,45 +480,79 @@ class _PostCardState extends State<PostCard>
               ],
             ),
           ),
-          // Action buttons for other users' posts
+          // Action buttons
           if (!widget.isOwnPost) ...[
-            // BOTÃO SEGUIR (JÁ EXISTENTE E COM MUDANÇA DE COR/TEXTO)
-            Visibility(visible: !widget.isFollowing, child: _buildFollowButton()),
-            SizedBox(width: 8.w), // Add some spacing between buttons
-            _buildMenuButton(),
-          ] else ...[ // Only show menu button for own posts
-            _buildMenuButton(),
+            GetX<HomeController>(
+              builder: (controller) {
+                final isFollowing = controller.isFollowingUser(widget.post.authorId);
+
+                if (isFollowing) {
+                  return const SizedBox.shrink();
+                }
+
+                return Container(
+                  height: 32.h,
+                  child: ElevatedButton(
+                    onPressed: widget.onFollow,
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: Size.zero,
+                      backgroundColor: AppColors.primary,
+                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                      ),
+                    ),
+                    child: Text(
+                      'Seguir',
+                      style: TextStyles.labelSmall.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11.sp,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            SizedBox(width: 8.w),
           ],
+          Container(
+            width: 32.w,
+            height: 32.h,
+            child: _buildMenuButton(),
+          ),
         ],
       ),
     );
   }
 
-  // MÉTODO _buildFollowButton (JÁ EXISTENTE E COM MUDANÇA DE COR/TEXTO)
-  Widget _buildFollowButton() {
-    return Container(
-      height: 32.h,
-      child: ElevatedButton(
-        onPressed: widget.onFollow,
-        style: ElevatedButton.styleFrom(
-          minimumSize: Size.zero, // Adicionado para resolver o problema de largura infinita
-          backgroundColor: widget.isFollowing ? AppColors.surfaceVariant : AppColors.primary,
-          foregroundColor: widget.isFollowing ? AppColors.text : AppColors.onPrimary,
-          elevation: 0,
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
-            side: widget.isFollowing ? const BorderSide(color: AppColors.border) : BorderSide.none,
-          ),
-        ),
-        child: Text(
-          'Seguir',
-          style: TextStyles.labelSmall.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    );
+  IconData _getOccasionIcon(PostOccasion occasion) {
+    switch (occasion) {
+      case PostOccasion.trabalho:
+        return Icons.work;
+      case PostOccasion.festa:
+        return Icons.celebration;
+      case PostOccasion.casual:
+        return Icons.weekend;
+      case PostOccasion.encontro:
+        return Icons.favorite;
+      case PostOccasion.formatura:
+        return Icons.school;
+      case PostOccasion.casamento:
+        return Icons.church;
+      case PostOccasion.academia:
+        return Icons.fitness_center;
+      case PostOccasion.viagem:
+        return Icons.flight;
+      case PostOccasion.balada:
+        return Icons.nightlife;
+      case PostOccasion.praia:
+        return Icons.beach_access;
+      case PostOccasion.shopping:
+        return Icons.shopping_bag;
+      default:
+        return Icons.circle;
+    }
   }
 
   Widget _buildMenuButton() {
@@ -501,7 +560,10 @@ class _PostCardState extends State<PostCard>
       onSelected: (value) {
         switch (value) {
           case 'remove_vote':
-            widget.onRemoveVote?.call(); // CHAMADA AO CALLBACK onRemoveVote
+            widget.onRemoveVote?.call();
+            break;
+          case 'unfollow':
+            widget.onFollow?.call(); // Reutiliza o callback existente
             break;
           case 'report':
             _showReportDialog();
@@ -511,7 +573,7 @@ class _PostCardState extends State<PostCard>
       itemBuilder: (context) {
         List<PopupMenuEntry<String>> items = [];
 
-        // Opção de remover voto (só aparece se o usuário votou)
+        // Opção de remover voto
         if (widget.hasUserVoted && widget.onRemoveVote != null) {
           items.add(
             const PopupMenuItem(
@@ -527,7 +589,23 @@ class _PostCardState extends State<PostCard>
           );
         }
 
-        // Opção de reportar (sempre disponível para posts de outros usuários)
+        // NOVO: Opção de deixar de seguir
+        if (!widget.isOwnPost && widget.isFollowing) {
+          items.add(
+            const PopupMenuItem(
+              value: 'unfollow',
+              child: Row(
+                children: [
+                  Icon(Icons.person_remove_outlined, color: AppColors.error),
+                  SizedBox(width: 12),
+                  Text('Deixar de seguir'),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Opção de reportar
         if (!widget.isOwnPost) {
           items.add(
             const PopupMenuItem(
@@ -543,7 +621,6 @@ class _PostCardState extends State<PostCard>
           );
         }
 
-        // Se não há opções disponíveis, mostrar uma opção disabled
         if (items.isEmpty) {
           items.add(
             const PopupMenuItem(
@@ -575,6 +652,31 @@ class _PostCardState extends State<PostCard>
           color: AppColors.textSecondary,
           size: 18.sp,
         ),
+      ),
+    );
+  }
+
+  void _showUnfollowConfirmation(HomeController controller) {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Deixar de seguir'),
+        content: Text('Tem certeza que deseja deixar de seguir ${widget.post.authorName}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Get.back();
+              controller.toggleFollowUser(widget.post.authorId);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.error,
+            ),
+            child: const Text('Deixar de seguir'),
+          ),
+        ],
       ),
     );
   }
@@ -854,7 +956,7 @@ class _PostCardState extends State<PostCard>
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       child: Row(
         children: [
-          // Vote status com número de votos na mesma linha
+          // Vote status
           if (widget.hasUserVoted) ...[
             Icon(
               Icons.how_to_vote_rounded,
@@ -900,13 +1002,19 @@ class _PostCardState extends State<PostCard>
           ],
           const Spacer(),
           // Action buttons
-          // BOTÃO SALVAR (JÁ EXISTENTE E COM MUDANÇA DE COR)
-          _buildActionButton(
-            icon: Icons.bookmark_border_rounded,
-            activeIcon: Icons.bookmark_rounded,
-            isActive: widget.isSaved,
-            activeColor: Colors.amber, // Cor amarela para posts salvos
-            onTap: _handleSave,
+          GetX<HomeController>(
+            builder: (controller) {
+              final isSaved = controller.isPostSaved(widget.post.id);
+
+              return GestureDetector(
+                onTap: _handleSave,
+                child: Icon(
+                  isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                  size: 24.sp,
+                  color: isSaved ? Colors.amber : AppColors.textSecondary,
+                ),
+              );
+            },
           ),
           SizedBox(width: 16.w),
           _buildActionButton(
@@ -960,19 +1068,40 @@ class _PostCardState extends State<PostCard>
 
   Widget _buildTags() {
     return Padding(
-      padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h), // Aumentado padding bottom já que não há mais timestamp
-      child: Wrap(
-        spacing: 6.w,
-        runSpacing: 4.h,
-        children: widget.post.tags.take(3).map((tag) {
-          return Text(
-            '#$tag',
-            style: TextStyles.bodySmall.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w500,
+      padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 16.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Tags normais (se existirem)
+          if (widget.post.tags.isNotEmpty) ...[
+            SizedBox(height: 8.h),
+            Wrap(
+              spacing: 6.w,
+              runSpacing: 6.h,
+              children: widget.post.tags.take(4).map((tag) {
+                return Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(
+                      color: AppColors.primary.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    '#$tag',
+                    style: TextStyles.bodySmall.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 10.sp,
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
-          );
-        }).toList(),
+          ],
+        ],
       ),
     );
   }

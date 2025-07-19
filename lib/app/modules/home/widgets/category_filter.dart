@@ -34,6 +34,7 @@ class CategoryFilter extends StatelessWidget {
 
   Widget _buildCategoryChip(String category) {
     final isSelected = selectedCategory.value == category;
+    final occasionColor = _getOccasionColorByName(category);
 
     return GestureDetector(
       onTap: () => onCategorySelected(category),
@@ -41,28 +42,28 @@ class CategoryFilter extends StatelessWidget {
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOutCubic,
         margin: EdgeInsets.only(right: 12.w),
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
         decoration: BoxDecoration(
           gradient: isSelected
               ? LinearGradient(
-            colors: [AppColors.primary, AppColors.secondary],
+            colors: [occasionColor, occasionColor.withOpacity(0.8)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           )
               : null,
           color: isSelected ? null : AppColors.surface,
-          borderRadius: BorderRadius.circular(24.r),
+          borderRadius: BorderRadius.circular(20.r),
           border: Border.all(
             color: isSelected
                 ? Colors.transparent
-                : AppColors.border.withOpacity(0.3),
-            width: 1,
+                : occasionColor.withOpacity(0.3),
+            width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
               color: isSelected
-                  ? AppColors.primary.withOpacity(0.3)
-                  : AppColors.shadow.withOpacity(0.05),
+                  ? occasionColor.withOpacity(0.4)
+                  : occasionColor.withOpacity(0.1),
               blurRadius: isSelected ? 12 : 6,
               offset: Offset(0, isSelected ? 4 : 2),
             ),
@@ -71,12 +72,12 @@ class CategoryFilter extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildCategoryIcon(category, isSelected),
-            SizedBox(width: 8.w),
+            _buildCategoryIcon(category, isSelected, occasionColor),
+            SizedBox(width: 6.w),
             Text(
               category,
               style: TextStyles.labelMedium.copyWith(
-                color: isSelected ? AppColors.onPrimary : AppColors.text,
+                color: isSelected ? Colors.white : occasionColor,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                 letterSpacing: -0.2,
               ),
@@ -87,55 +88,91 @@ class CategoryFilter extends StatelessWidget {
     );
   }
 
-  Widget _buildCategoryIcon(String category, bool isSelected) {
-    IconData iconData;
-
-    switch (category.toLowerCase()) {
-      case 'casual':
-        iconData = Icons.style_rounded;
-        break;
-      case 'trabalho':
-        iconData = Icons.business_center_rounded;
-        break;
-      case 'festa':
-        iconData = Icons.celebration_rounded;
-        break;
-      case 'esporte':
-        iconData = Icons.sports_rounded;
-        break;
-      case 'praia':
-        iconData = Icons.beach_access_rounded;
-        break;
-      case 'inverno':
-        iconData = Icons.ac_unit_rounded;
-        break;
-      case 'verão':
-        iconData = Icons.wb_sunny_rounded;
-        break;
-      case 'formal':
-        iconData = Icons.diamond_rounded;
-        break;
-      case 'noturno':
-        iconData = Icons.nightlife_rounded;
-        break;
-      default:
-        iconData = Icons.checkroom_rounded;
-    }
+  Widget _buildCategoryIcon(String category, bool isSelected, Color occasionColor) {
+    IconData iconData = _getOccasionIconByName(category);
 
     return Container(
-      width: 20.w,
-      height: 20.h,
+      width: 22.w,
+      height: 22.h,
       decoration: BoxDecoration(
         color: isSelected
-            ? AppColors.onPrimary.withOpacity(0.2)
-            : AppColors.primary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(6.r),
+            ? Colors.white.withOpacity(0.2)
+            : occasionColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8.r),
       ),
       child: Icon(
         iconData,
-        size: 12.sp,
-        color: isSelected ? AppColors.onPrimary : AppColors.primary,
+        size: 14.sp,
+        color: isSelected ? Colors.white : occasionColor,
       ),
     );
+  }
+
+  // MAPEAMENTO DE CORES POR NOME DA CATEGORIA
+  Color _getOccasionColorByName(String categoryName) {
+    switch (categoryName.toLowerCase()) {
+      case 'todos':
+        return AppColors.primary;
+      case 'trabalho':
+        return Colors.blue;
+      case 'festa':
+        return Colors.purple;
+      case 'casual':
+        return Colors.green;
+      case 'encontro':
+        return Colors.pink;
+      case 'formatura':
+        return Colors.indigo;
+      case 'casamento':
+        return Colors.orange;
+      case 'academia':
+        return Colors.red;
+      case 'viagem':
+        return Colors.teal;
+      case 'balada':
+        return Colors.deepPurple;
+      case 'praia':
+        return Colors.cyan;
+      case 'shopping':
+        return Colors.amber;
+      case 'outros':
+        return Colors.grey;
+      default:
+        return AppColors.primary;
+    }
+  }
+
+  // MAPEAMENTO DE ÍCONES POR NOME DA CATEGORIA
+  IconData _getOccasionIconByName(String categoryName) {
+    switch (categoryName.toLowerCase()) {
+      case 'todos':
+        return Icons.apps_rounded;
+      case 'trabalho':
+        return Icons.work;
+      case 'festa':
+        return Icons.celebration;
+      case 'casual':
+        return Icons.weekend;
+      case 'encontro':
+        return Icons.favorite;
+      case 'formatura':
+        return Icons.school;
+      case 'casamento':
+        return Icons.church;
+      case 'academia':
+        return Icons.fitness_center;
+      case 'viagem':
+        return Icons.flight;
+      case 'balada':
+        return Icons.nightlife;
+      case 'praia':
+        return Icons.beach_access;
+      case 'shopping':
+        return Icons.shopping_bag;
+      case 'outros':
+        return Icons.more_horiz;
+      default:
+        return Icons.style;
+    }
   }
 }

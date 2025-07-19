@@ -318,7 +318,7 @@ class HomeView extends GetView<HomeController> {
             }
 
             return PostCard(
-              key: ValueKey('post_${post.id}_${post.createdAt.millisecondsSinceEpoch}'),
+              key: ValueKey('post_${post.id}_${controller.isPostSaved(post.id)}_${DateTime.now().millisecondsSinceEpoch}'),
               post: post,
               hasUserVoted: controller.hasUserVoted(post.id),
               userVote: controller.getUserVote(post.id),
