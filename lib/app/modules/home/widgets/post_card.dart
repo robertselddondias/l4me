@@ -47,6 +47,10 @@ class _PostCardState extends State<PostCard>
   late Animation<double> _heartScaleAnimation;
   late Animation<double> _selectionAnimation;
   late Animation<double> _saveScaleAnimation;
+  late Animation<Color?> _selectionColorAnimation;
+  late Animation<double> _selectionBorderWidthAnimation;
+  late Animation<Offset> _selectionOffsetAnimation;
+  late Animation<double> _selectionBlurRadiusAnimation;
 
   int? _selectedOption;
 
@@ -84,6 +88,42 @@ class _PostCardState extends State<PostCard>
     _selectionAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _selectionAnimationController,
+      curve: Curves.easeInOutCubic,
+    ));
+
+    // Animation for selection border color
+    _selectionColorAnimation = ColorTween(
+      begin: AppColors.primary.withOpacity(0.0),
+      end: AppColors.primary,
+    ).animate(CurvedAnimation(
+      parent: _selectionAnimationController,
+      curve: Curves.easeInOutCubic,
+    ));
+
+    // Animation for selection border width
+    _selectionBorderWidthAnimation = Tween<double>(
+      begin: 0.0,
+      end: 3.0, // Thicker border for selected
+    ).animate(CurvedAnimation(
+      parent: _selectionAnimationController,
+      curve: Curves.easeInOutCubic,
+    ));
+
+    // Animation for selection shadow offset
+    _selectionOffsetAnimation = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(0, 4),
+    ).animate(CurvedAnimation(
+      parent: _selectionAnimationController,
+      curve: Curves.easeInOutCubic,
+    ));
+
+    // Animation for selection shadow blur radius
+    _selectionBlurRadiusAnimation = Tween<double>(
+      begin: 0.0,
+      end: 10.0,
     ).animate(CurvedAnimation(
       parent: _selectionAnimationController,
       curve: Curves.easeInOutCubic,
@@ -623,175 +663,184 @@ class _PostCardState extends State<PostCard>
   }
 
   Widget _buildImageOption(int option, String imageUrl) {
-    final isSelected = widget.hasUserVoted && _selectedOption == option;
+    // Check if the current user voted for this specific option
+    final bool isUserSelected = widget.hasUserVoted && widget.userVote == option;
     final percentage = option == 1
         ? widget.post.option1Percentage
         : widget.post.option2Percentage;
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Imagem base
-        GestureDetector(
-          // CHAMADA PARA EXIBIR IMAGEM EM TELA CHEIA (JÁ EXISTENTE)
-          onTap: () => _showFullScreenImage(imageUrl, option),
-          child: CachedNetworkImage(
-            imageUrl: imageUrl,
-            fit: BoxFit.cover,
-            placeholder: (context, url) => Container(
-              color: AppColors.surfaceVariant,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 20.w,
-                    height: 20.h,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    'Carregando...',
-                    style: TextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: 9.sp,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            errorWidget: (context, url, error) => Container(
-              color: AppColors.surfaceVariant,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.image_not_supported_outlined,
-                    color: AppColors.textTertiary,
-                    size: 28.sp,
-                  ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    'Erro ao carregar',
-                    style: TextStyles.bodySmall.copyWith(
-                      color: AppColors.textTertiary,
-                      fontSize: 9.sp,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-
-        // Gradient overlay
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.transparent,
-                Colors.black.withOpacity(0.05),
-              ],
-              stops: const [0.8, 1.0],
-            ),
-          ),
-        ),
-
-        // Resultado do voto (se votou)
-        if (widget.hasUserVoted)
-          Positioned(
-            top: 12.h,
-            right: 12.w,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primary
-                    : Colors.black.withOpacity(0.6),
-                borderRadius: BorderRadius.circular(12.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (isSelected) ...[
-                    Icon(
-                      Icons.check_circle_rounded,
-                      color: Colors.white,
-                      size: 12.sp,
-                    ),
-                    SizedBox(width: 4.w),
-                  ],
-                  Text(
-                    '${percentage.toStringAsFixed(0)}%',
-                    style: TextStyles.labelSmall.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-        // Botão de voto (se não votou)
-        if (!widget.hasUserVoted)
-          Positioned(
-            bottom: 12.h,
-            right: 12.w,
-            child: GestureDetector(
-              onTap: () => _handleVote(option),
-              child: Container(
-                width: 40.w,
-                height: 40.h,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primary, AppColors.secondary],
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.how_to_vote_rounded,
-                  color: Colors.white,
-                  size: 20.sp,
-                ),
-              ),
-            ),
-          ),
-
-        // Indicador de seleção
-        if (widget.hasUserVoted && isSelected) _buildSelectionIndicator(),
-      ],
-    );
-  }
-
-  Widget _buildSelectionIndicator() {
-    return Positioned.fill(
+    return GestureDetector(
+      onTap: () => _showFullScreenImage(imageUrl, option),
       child: AnimatedBuilder(
         animation: _selectionAnimationController,
         builder: (context, child) {
           return Container(
             decoration: BoxDecoration(
               border: Border.all(
-                color: AppColors.primary.withOpacity(_selectionAnimation.value * 0.6),
-                width: 3,
+                color: isUserSelected
+                    ? _selectionColorAnimation.value!
+                    : Colors.transparent, // Only show border if user selected
+                width: isUserSelected
+                    ? _selectionBorderWidthAnimation.value
+                    : 0.0,
+              ),
+              boxShadow: isUserSelected
+                  ? [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(
+                      _selectionAnimation.value * 0.4), // Animated shadow color
+                  blurRadius: _selectionBlurRadiusAnimation.value,
+                  offset: _selectionOffsetAnimation.value,
+                ),
+              ]
+                  : [],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(isUserSelected ? 8.r : 0), // Slight rounded corners when selected
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Imagem base
+                  CachedNetworkImage(
+                    imageUrl: imageUrl,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      color: AppColors.surfaceVariant,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 20.w,
+                            height: 20.h,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          SizedBox(height: 8.h),
+                          Text(
+                            'Carregando...',
+                            style: TextStyles.bodySmall.copyWith(
+                              color: AppColors.textSecondary,
+                              fontSize: 9.sp,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      color: AppColors.surfaceVariant,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.image_not_supported_outlined,
+                            color: AppColors.textTertiary,
+                            size: 28.sp,
+                          ),
+                          SizedBox(height: 8.h),
+                          Text(
+                            'Erro ao carregar',
+                            style: TextStyles.bodySmall.copyWith(
+                              color: AppColors.textTertiary,
+                              fontSize: 9.sp,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Gradient overlay
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.05),
+                        ],
+                        stops: const [0.8, 1.0],
+                      ),
+                    ),
+                  ),
+
+                  // Resultado do voto (se votou)
+                  if (widget.hasUserVoted)
+                    Positioned(
+                      top: 12.h,
+                      right: 12.w,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                        decoration: BoxDecoration(
+                          color: isUserSelected // Use isUserSelected here
+                              ? AppColors.primary.withOpacity(0.9) // More prominent for user's vote
+                              : Colors.black.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(12.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isUserSelected) ...[ // Only show checkmark if this is the user's selected option
+                              Icon(
+                                Icons.check_circle_rounded,
+                                color: Colors.white,
+                                size: 12.sp,
+                              ),
+                              SizedBox(width: 4.w),
+                            ],
+                            Text(
+                              '${percentage.toStringAsFixed(0)}%',
+                              style: TextStyles.labelSmall.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                  // Botão de voto (se não votou)
+                  if (!widget.hasUserVoted)
+                    Positioned(
+                      bottom: 12.h,
+                      right: 12.w,
+                      child: GestureDetector(
+                        onTap: () => _handleVote(option),
+                        child: Container(
+                          width: 40.w,
+                          height: 40.h,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [AppColors.primary, AppColors.secondary],
+                            ),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            Icons.how_to_vote_rounded,
+                            color: Colors.white,
+                            size: 20.sp,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           );
